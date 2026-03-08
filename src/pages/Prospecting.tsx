@@ -126,19 +126,36 @@ const Prospecting = () => {
     else setSelected(new Set(filtered.map(p => p.id)));
   };
 
+  const checkDuplicateInCrm = async (businessName: string, phone: string | null): Promise<boolean> => {
+    let query = supabase.from('deals').select('id').eq('company_name', businessName);
+    if (phone) query = query.eq('phone', phone);
+    const { data } = await query.limit(1);
+    return (data && data.length > 0);
+  };
+
   const handleAddToCrm = async (prospect: Prospect) => {
     setAddingToCrm(prospect.id);
+    
+    const isDuplicate = await checkDuplicateInCrm(prospect.business_name, prospect.phone);
+    if (isDuplicate) {
+      toast.error(`${prospect.business_name} ya existe en el CRM`);
+      await supabase.from('prospects').update({ added_to_crm: true }).eq('id', prospect.id);
+      fetchProspects();
+      setAddingToCrm(null);
+      return;
+    }
+
     const { error } = await supabase.from('deals').insert({
       company_name: prospect.business_name,
       contact_name: prospect.business_name,
       phone: prospect.phone,
-      email: (prospect as any).email || null,
+      email: prospect.email || null,
       website: prospect.website || null,
-      whatsapp: (prospect as any).whatsapp || null,
-      instagram: (prospect as any).instagram || null,
-      facebook: (prospect as any).facebook || null,
-      linkedin: (prospect as any).linkedin || null,
-      tiktok: (prospect as any).tiktok || null,
+      whatsapp: prospect.whatsapp || null,
+      instagram: prospect.instagram || null,
+      facebook: prospect.facebook || null,
+      linkedin: prospect.linkedin || null,
+      tiktok: prospect.tiktok || null,
       category: prospect.category || null,
       stage: 'Lead',
       deal_value: 0,
@@ -158,17 +175,32 @@ const Prospecting = () => {
     const toAdd = filtered.filter(p => selected.has(p.id) && !p.added_to_crm);
     if (toAdd.length === 0) { toast.info('No hay prospectos nuevos seleccionados'); return; }
 
-    const inserts = toAdd.map(p => ({
+    // Check existing deals to filter duplicates
+    const { data: existingDeals } = await supabase.from('deals').select('company_name, phone');
+    const existingKeys = new Set((existingDeals || []).map(d => `${d.company_name}|${d.phone || ''}`));
+    
+    const unique = toAdd.filter(p => !existingKeys.has(`${p.business_name}|${p.phone || ''}`));
+    const skipped = toAdd.length - unique.length;
+
+    if (unique.length === 0) {
+      toast.info(`Todos los ${toAdd.length} prospectos ya están en el CRM`);
+      await supabase.from('prospects').update({ added_to_crm: true }).in('id', toAdd.map(p => p.id));
+      fetchProspects();
+      setSelected(new Set());
+      return;
+    }
+
+    const inserts = unique.map(p => ({
       company_name: p.business_name,
       contact_name: p.business_name,
       phone: p.phone,
-      email: (p as any).email || null,
+      email: p.email || null,
       website: p.website || null,
-      whatsapp: (p as any).whatsapp || null,
-      instagram: (p as any).instagram || null,
-      facebook: (p as any).facebook || null,
-      linkedin: (p as any).linkedin || null,
-      tiktok: (p as any).tiktok || null,
+      whatsapp: p.whatsapp || null,
+      instagram: p.instagram || null,
+      facebook: p.facebook || null,
+      linkedin: p.linkedin || null,
+      tiktok: p.tiktok || null,
       category: p.category || null,
       stage: 'Lead',
       deal_value: 0,
@@ -177,7 +209,10 @@ const Prospecting = () => {
     const { error } = await supabase.from('deals').insert(inserts);
     if (!error) {
       await supabase.from('prospects').update({ added_to_crm: true }).in('id', toAdd.map(p => p.id));
-      toast.success(`${toAdd.length} prospectos añadidos al CRM`);
+      const msg = skipped > 0
+        ? `${unique.length} añadidos al CRM (${skipped} duplicados omitidos)`
+        : `${unique.length} prospectos añadidos al CRM`;
+      toast.success(msg);
       setSelected(new Set());
       fetchProspects();
     } else {
