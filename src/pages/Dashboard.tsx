@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Briefcase, Euro, Users, FileText, Mail, ArrowRight, Loader2 } from 'lucide-react';
+import { Briefcase, Euro, Users, Mail, BookOpen, ArrowRight, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
@@ -10,7 +10,7 @@ interface KpiData {
   dealCount: number;
   pipelineValue: number;
   prospectsThisMonth: number;
-  copiesThisMonth: number;
+  
   campaignsThisMonth: number;
 }
 
@@ -32,10 +32,9 @@ const Dashboard = () => {
       startOfMonth.setHours(0, 0, 0, 0);
       const monthStart = startOfMonth.toISOString();
 
-      const [dealsRes, prospectsRes, copiesRes, campaignsRes] = await Promise.all([
+      const [dealsRes, prospectsRes, campaignsRes] = await Promise.all([
         supabase.from('deals').select('id, deal_value, company_name, created_at, stage'),
         supabase.from('prospects').select('id, business_name, created_at').gte('created_at', monthStart),
-        supabase.from('saved_copies').select('id, business_type, created_at').gte('created_at', monthStart),
         supabase.from('email_campaigns').select('id, campaign_name, created_at, status').gte('created_at', monthStart),
       ]);
 
@@ -47,7 +46,7 @@ const Dashboard = () => {
         dealCount: activeDeals.length,
         pipelineValue: activeDeals.reduce((s, d) => s + Number(d.deal_value), 0),
         prospectsThisMonth: (prospectsRes.data || []).length,
-        copiesThisMonth: (copiesRes.data || []).length,
+        
         campaignsThisMonth: (campaignsRes.data || []).length,
       });
 
@@ -81,14 +80,14 @@ const Dashboard = () => {
     { label: 'Deals en Pipeline', value: String(kpis.dealCount), icon: Briefcase },
     { label: 'Valor Pipeline', value: `€${kpis.pipelineValue.toLocaleString()}`, icon: Euro },
     { label: 'Prospectos este mes', value: String(kpis.prospectsThisMonth), icon: Users },
-    { label: 'Propuestas generadas', value: String(kpis.copiesThisMonth), icon: FileText },
+    
     { label: 'Campañas este mes', value: String(kpis.campaignsThisMonth), icon: Mail },
   ] : [];
 
   const quickActions = [
     { label: 'Nuevo Deal', icon: Briefcase, path: '/crm', color: 'bg-primary/10 text-primary' },
     { label: 'Nueva Campaña', icon: Mail, path: '/email-campaigns', color: 'bg-secondary/10 text-secondary' },
-    { label: 'Nuevo Artículo', icon: FileText, path: '/knowledge', color: 'bg-warning/10 text-warning' },
+    { label: 'Nuevo Artículo', icon: BookOpen, path: '/knowledge', color: 'bg-warning/10 text-warning' },
   ];
 
   if (loading) {
