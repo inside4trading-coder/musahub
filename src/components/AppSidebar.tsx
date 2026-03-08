@@ -6,12 +6,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import musaLogo from '@/assets/musa-logo.png';
+import musaLogoFooter from '@/assets/musa-logo-footer.png';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'CRM', icon: Briefcase, path: '/crm' },
   { label: 'Prospección', icon: Map, path: '/prospecting' },
-  
   { label: 'Email Campaigns', icon: Mail, path: '/email-campaigns' },
   { label: 'Knowledge Base', icon: BookOpen, path: '/knowledge' },
   { label: 'Configuración', icon: Settings, path: '/settings' },
@@ -32,17 +33,19 @@ export const AppSidebar = () => {
       {/* Logo */}
       <div className="flex items-center justify-between px-5 py-5 border-b border-border">
         {!collapsed && (
-          <div>
-            <h1 className="text-xl font-extrabold" style={{ letterSpacing: '-0.03em' }}>
-              <span className="text-heading">musa</span>
-              <span className="text-primary"> hub</span>
-              <span className="text-primary ml-0.5 text-sm">●</span>
-            </h1>
-            <p className="label-style text-[10px] mt-0.5">Agency Portal</p>
+          <div className="flex items-center gap-2.5">
+            <img src={musaLogo} alt="Musa" className="h-9 w-auto" />
+            <div>
+              <h1 className="text-lg font-extrabold leading-tight" style={{ letterSpacing: '-0.03em' }}>
+                <span className="text-heading">musa</span>
+                <span className="text-primary"> hub</span>
+              </h1>
+              <p className="label-style text-[10px]">Agency Portal</p>
+            </div>
           </div>
         )}
         {collapsed && (
-          <span className="text-primary font-extrabold text-xl mx-auto">m</span>
+          <img src={musaLogoFooter} alt="Musa" className="h-7 w-auto mx-auto" />
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
@@ -74,8 +77,13 @@ export const AppSidebar = () => {
         })}
       </nav>
 
-      {/* User / Logout */}
-      <div className="border-t border-border p-3">
+      {/* Footer with logo + logout */}
+      <div className="border-t border-border p-3 space-y-2">
+        {!collapsed && (
+          <div className="flex justify-center py-1">
+            <img src={musaLogoFooter} alt="Musa" className="h-6 w-auto opacity-30" />
+          </div>
+        )}
         <button
           onClick={signOut}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-body hover:bg-muted transition-all"
