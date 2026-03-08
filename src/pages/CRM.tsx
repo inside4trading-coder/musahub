@@ -168,10 +168,12 @@ const CRM = () => {
     else { toast.success('Deal eliminado'); setSelectedDeal(null); setEditing(false); fetchDeals(); }
   };
 
-  const filteredDeals = deals.filter(d =>
-    d.company_name.toLowerCase().includes(search.toLowerCase()) ||
-    d.contact_name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredDeals = deals.filter(d => {
+    const matchesSearch = d.company_name.toLowerCase().includes(search.toLowerCase()) ||
+      d.contact_name.toLowerCase().includes(search.toLowerCase());
+    const matchesOwner = !ownerFilter || d.assigned_to === ownerFilter;
+    return matchesSearch && matchesOwner;
+  });
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
