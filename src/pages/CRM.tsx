@@ -32,6 +32,7 @@ const stages = Object.keys(stageColors);
 const emptyDeal = {
   company_name: '', contact_name: '', email: '', phone: '',
   deal_value: 0, stage: 'Lead', notes: '', tags: [] as string[],
+  assigned_to: '' as string,
 };
 
 const CRM = () => {
