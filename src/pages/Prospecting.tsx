@@ -295,6 +295,44 @@ const Prospecting = () => {
     }
   };
 
+  const handlePinComplete = (value: string) => {
+    if (value === '050794') {
+      setUnlocked(true);
+      sessionStorage.setItem('prospecting_unlocked', 'true');
+      setPinError(false);
+    } else {
+      setPinError(true);
+      setPin('');
+    }
+  };
+
+  if (!unlocked) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-120px)]">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card border border-border rounded-2xl shadow-card p-8 w-full max-w-sm text-center">
+          <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+            <Lock className="h-7 w-7 text-primary" />
+          </div>
+          <h2 className="text-xl font-bold text-heading mb-1">Acceso restringido</h2>
+          <p className="text-sm text-muted-foreground mb-6">Introduce el PIN de 6 dígitos para acceder</p>
+          <div className="flex justify-center mb-4">
+            <InputOTP maxLength={6} value={pin} onChange={(v) => { setPin(v); setPinError(false); }} onComplete={handlePinComplete}>
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+          {pinError && <p className="text-sm text-destructive">PIN incorrecto, intenta de nuevo</p>}
+        </motion.div>
+      </div>
+    );
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
