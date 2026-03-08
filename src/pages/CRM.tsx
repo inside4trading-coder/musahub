@@ -65,6 +65,7 @@ const CRM = () => {
   const [newActivityDate, setNewActivityDate] = useState('');
   const [addingActivity, setAddingActivity] = useState(false);
   const [showActivityForm, setShowActivityForm] = useState(false);
+  const [newActivityType, setNewActivityType] = useState('note');
   // Mouse drag-to-scroll for kanban
   const kanbanRef = useRef<HTMLDivElement>(null);
   const isDraggingScroll = useRef(false);
