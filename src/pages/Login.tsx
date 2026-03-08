@@ -5,8 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import musaLogoText from '@/assets/musa-logo-text.png';
-import musaLogoIcon from '@/assets/musa-logo-icon.png';
 
 const Login = () => {
   const { user, signIn } = useAuth();
@@ -31,10 +29,13 @@ const Login = () => {
       <div className="w-full max-w-md">
         <div className="rounded-2xl bg-card p-8 shadow-modal border border-border">
           {/* Logo */}
-          <div className="mb-8 flex flex-col items-center gap-3">
-            <img src={musaLogoIcon} alt="Musa" className="h-12 w-12 object-contain" />
-            <img src={musaLogoText} alt="Musa Hub" className="h-6 object-contain" />
-            <p className="label-style mt-1">Agency Portal</p>
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-extrabold tracking-tight" style={{ letterSpacing: '-0.03em' }}>
+              <span className="text-heading">musa</span>
+              <span className="text-primary"> hub</span>
+              <span className="text-primary ml-1 text-lg">●</span>
+            </h1>
+            <p className="label-style mt-2">Agency Portal</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
