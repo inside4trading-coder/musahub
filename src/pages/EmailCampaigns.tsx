@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Plus, Send, Calendar, Loader2, Copy, Trash2, Clock } from 'lucide-react';
+import { Mail, Plus, Send, Calendar, Loader2, Copy, Trash2, Clock, Link } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
