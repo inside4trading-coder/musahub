@@ -128,8 +128,8 @@ export const ProspectingMap = ({ businessType, city, onSearchResults, onSearchSt
     });
   }, [city, mapReady]);
 
-  // Search handler
-  const doSearch = useCallback(() => {
+  // Search handler using Places API (New)
+  const doSearch = useCallback(async () => {
     if (!mapReady || !mapInstance.current) return;
 
     onSearchStart();
@@ -140,42 +140,52 @@ export const ProspectingMap = ({ businessType, city, onSearchResults, onSearchSt
     markersRef.current = [];
 
     const map = mapInstance.current;
-    const service = new google.maps.places.PlacesService(map);
     const bounds = currentPolygon.current
       ? getPolygonBounds(currentPolygon.current)
       : map.getBounds();
 
     if (!bounds) { setSearching(false); return; }
 
-    const request: google.maps.places.TextSearchRequest = {
-      query: businessType,
-      bounds: bounds,
-    };
-
-    const allResults: ProspectResult[] = [];
     const polygonPath = currentPolygon.current?.getPath();
     const polygonData = polygonPath
       ? polygonPath.getArray().map(p => ({ lat: p.lat(), lng: p.lng() }))
       : null;
 
-    service.textSearch(request, (results, status, pagination) => {
-      if (status !== google.maps.places.PlacesServiceStatus.OK || !results) {
+    try {
+      // Use the new Places API (searchByText)
+      const { Place } = await google.maps.importLibrary('places') as google.maps.PlacesLibrary;
+      const center = bounds.getCenter();
+      
+      const request = {
+        textQuery: businessType + ' ' + city,
+        fields: ['displayName', 'formattedAddress', 'location', 'rating', 'userRatingCount', 'nationalPhoneNumber', 'websiteURI'],
+        locationBias: bounds,
+        maxResultCount: 20,
+      };
+
+      // @ts-ignore - searchByText is part of the new Places API
+      const { places } = await Place.searchByText(request);
+
+      if (!places || places.length === 0) {
         setSearching(false);
         onSearchResults([]);
         return;
       }
 
-      const mapped = results
-        .filter(r => {
-          if (!polygonPath || !r.geometry?.location) return true;
-          return google.maps.geometry?.poly?.containsLocation(r.geometry.location, currentPolygon.current!);
+      const mapped: ProspectResult[] = places
+        .filter((place: any) => {
+          if (!polygonPath || !place.location) return true;
+          return google.maps.geometry?.poly?.containsLocation(place.location, currentPolygon.current!);
         })
-        .map(r => {
+        .map((place: any) => {
+          const lat = place.location?.lat() ?? 0;
+          const lng = place.location?.lng() ?? 0;
+
           // Add marker
           const marker = new google.maps.Marker({
-            position: r.geometry!.location!,
+            position: { lat, lng },
             map,
-            title: r.name,
+            title: place.displayName,
             icon: {
               path: google.maps.SymbolPath.CIRCLE,
               scale: 7,
@@ -188,30 +198,27 @@ export const ProspectingMap = ({ businessType, city, onSearchResults, onSearchSt
           markersRef.current.push(marker);
 
           return {
-            business_name: r.name || 'Sin nombre',
-            address: r.formatted_address || '',
-            phone: null, // needs detail request
-            website: null,
-            rating: r.rating ?? null,
-            review_count: r.user_ratings_total ?? null,
-            latitude: r.geometry!.location!.lat(),
-            longitude: r.geometry!.location!.lng(),
+            business_name: place.displayName || 'Sin nombre',
+            address: place.formattedAddress || '',
+            phone: place.nationalPhoneNumber || null,
+            website: place.websiteURI || null,
+            rating: place.rating ?? null,
+            review_count: place.userRatingCount ?? null,
+            latitude: lat,
+            longitude: lng,
             category: businessType,
             city: city,
             polygon_data: polygonData,
           };
         });
 
-      allResults.push(...mapped);
-
-      // Fetch next page if available (up to 60 results)
-      if (pagination?.hasNextPage && allResults.length < 60) {
-        setTimeout(() => pagination.nextPage(), 300);
-      } else {
-        setSearching(false);
-        onSearchResults(allResults);
-      }
-    });
+      setSearching(false);
+      onSearchResults(mapped);
+    } catch (error) {
+      console.error('Places search error:', error);
+      setSearching(false);
+      onSearchResults([]);
+    }
   }, [mapReady, businessType, city, onSearchResults, onSearchStart]);
 
   // React to search trigger
