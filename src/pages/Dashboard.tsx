@@ -47,7 +47,7 @@ const Dashboard = () => {
         dealCount: activeDeals.length,
         pipelineValue: activeDeals.reduce((s, d) => s + Number(d.deal_value), 0),
         prospectsThisMonth: (prospectsRes.data || []).length,
-        copiesThisMonth: (copiesRes.data || []).length,
+        
         campaignsThisMonth: (campaignsRes.data || []).length,
       });
 
