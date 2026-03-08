@@ -35,7 +35,7 @@ const Dashboard = () => {
       const [dealsRes, prospectsRes, copiesRes, campaignsRes] = await Promise.all([
         supabase.from('deals').select('id, deal_value, company_name, created_at, stage'),
         supabase.from('prospects').select('id, business_name, created_at').gte('created_at', monthStart),
-        supabase.from('saved_copies').select('id, business_type, created_at').gte('created_at', monthStart),
+        
         supabase.from('email_campaigns').select('id, campaign_name, created_at, status').gte('created_at', monthStart),
       ]);
 
