@@ -267,3 +267,20 @@ function getPolygonBounds(polygon: google.maps.Polygon): google.maps.LatLngBound
   polygon.getPath().forEach(point => bounds.extend(point));
   return bounds;
 }
+
+function subdivideBounds(bounds: google.maps.LatLngBounds, divisions: number): google.maps.LatLngBounds[] {
+  const ne = bounds.getNorthEast();
+  const sw = bounds.getSouthWest();
+  const latStep = (ne.lat() - sw.lat()) / divisions;
+  const lngStep = (ne.lng() - sw.lng()) / divisions;
+  const result: google.maps.LatLngBounds[] = [];
+
+  for (let i = 0; i < divisions; i++) {
+    for (let j = 0; j < divisions; j++) {
+      const subSw = new google.maps.LatLng(sw.lat() + i * latStep, sw.lng() + j * lngStep);
+      const subNe = new google.maps.LatLng(sw.lat() + (i + 1) * latStep, sw.lng() + (j + 1) * lngStep);
+      result.push(new google.maps.LatLngBounds(subSw, subNe));
+    }
+  }
+  return result;
+}
