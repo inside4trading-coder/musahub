@@ -508,7 +508,7 @@ const EmailCampaigns = () => {
                           </div>
                           <div className="pb-2">
                             <p className="text-xs font-semibold text-heading">
-                              {es.subject || `Paso ${es.step_number}`}
+                              {useThread && i > 0 ? `Re: ${emailSteps[0]?.subject || '...'}` : (es.subject || `Paso ${es.step_number}`)}
                             </p>
                             <p className="text-[10px] text-muted-foreground">
                               {es.delay_days === 0 ? 'Envío inmediato' : `+${es.delay_days} día${es.delay_days !== 1 ? 's' : ''} después`}
