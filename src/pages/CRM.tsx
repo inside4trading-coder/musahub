@@ -223,7 +223,7 @@ const CRM = () => {
     setAddingActivity(false);
   };
 
-
+  const filteredDeals = deals.filter(d => {
     const matchesSearch = d.company_name.toLowerCase().includes(search.toLowerCase()) ||
       d.contact_name.toLowerCase().includes(search.toLowerCase());
     const matchesOwner = !ownerFilter || d.assigned_to === ownerFilter;
