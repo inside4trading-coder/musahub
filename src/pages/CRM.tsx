@@ -531,7 +531,13 @@ const CRM = () => {
                     </select>
                   </div>
                 </div>
-                <p className="label-style pt-2">Redes Sociales</p>
+                <div>
+                  <Label className="text-xs font-semibold text-heading">Owner</Label>
+                  <select value={editForm.assigned_to || ''} onChange={e => setEditForm(p => ({ ...p, assigned_to: e.target.value || null }))} className="w-full h-10 rounded-[10px] bg-muted border border-border px-3 text-sm mt-1">
+                    <option value="">Sin asignar</option>
+                    {profiles.map(p => <option key={p.id} value={p.id}>{p.full_name || 'Sin nombre'}</option>)}
+                  </select>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs font-semibold text-heading">Instagram</Label>
