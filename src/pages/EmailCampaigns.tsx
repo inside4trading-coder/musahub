@@ -524,7 +524,7 @@ const EmailCampaigns = () => {
                   <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl">← Anterior</Button>
                   <Button
                     onClick={() => setStep(3)}
-                    disabled={emailSteps.some(s => !s.subject.trim())}
+                    disabled={useThread ? !emailSteps[0]?.subject.trim() : emailSteps.some(s => !s.subject.trim())}
                     className="rounded-xl bg-primary text-primary-foreground font-semibold"
                   >
                     Siguiente →
