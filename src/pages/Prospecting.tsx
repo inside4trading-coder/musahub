@@ -416,6 +416,12 @@ const Prospecting = () => {
                             {r.phone && <p className="text-xs text-body mt-1">📞 {r.phone}</p>}
                             {(r as any).email && <p className="text-xs text-body">✉️ {(r as any).email}</p>}
                             {(r as any).whatsapp && <p className="text-xs text-body">💬 {(r as any).whatsapp}</p>}
+                            <div className="flex flex-wrap gap-2 mt-0.5">
+                              {(r as any).instagram && <a href={(r as any).instagram} target="_blank" rel="noopener noreferrer" className="text-xs text-pink-500 hover:underline">📷 IG</a>}
+                              {(r as any).facebook && <a href={(r as any).facebook} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">📘 FB</a>}
+                              {(r as any).linkedin && <a href={(r as any).linkedin} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 hover:underline">💼 LI</a>}
+                              {(r as any).tiktok && <a href={(r as any).tiktok} target="_blank" rel="noopener noreferrer" className="text-xs text-foreground hover:underline">🎵 TK</a>}
+                            </div>
                           </div>
                           <div className="text-right shrink-0">
                             {r.rating !== null && <span className="text-sm font-bold text-warning">⭐ {Number(r.rating).toFixed(1)}</span>}
