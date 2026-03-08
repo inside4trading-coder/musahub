@@ -45,6 +45,26 @@ const CRM = () => {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Deal>>({});
 
+  // Mouse drag-to-scroll for kanban
+  const kanbanRef = useRef<HTMLDivElement>(null);
+  const isDraggingScroll = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftStart = useRef(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!kanbanRef.current) return;
+    isDraggingScroll.current = true;
+    startX.current = e.pageX - kanbanRef.current.offsetLeft;
+    scrollLeftStart.current = kanbanRef.current.scrollLeft;
+  };
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingScroll.current || !kanbanRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - kanbanRef.current.offsetLeft;
+    kanbanRef.current.scrollLeft = scrollLeftStart.current - (x - startX.current);
+  };
+  const handleMouseUp = () => { isDraggingScroll.current = false; };
+
   const fetchDeals = useCallback(async () => {
     const { data, error } = await supabase
       .from('deals')
