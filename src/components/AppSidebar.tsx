@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import musaLogoText from '@/assets/musa-logo-text.png';
+import musaLogoIcon from '@/assets/musa-logo-icon.png';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
