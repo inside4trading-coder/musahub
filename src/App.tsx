@@ -11,7 +11,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import CRM from "./pages/CRM";
 import Prospecting from "./pages/Prospecting";
-import Generator from "./pages/Generator";
+
 import EmailCampaigns from "./pages/EmailCampaigns";
 import Knowledge from "./pages/Knowledge";
 import SettingsPage from "./pages/Settings";
