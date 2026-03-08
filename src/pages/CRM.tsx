@@ -40,6 +40,7 @@ const CRM = () => {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState<string>('');
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [showNewDeal, setShowNewDeal] = useState(false);
   const [newDeal, setNewDeal] = useState(emptyDeal);
