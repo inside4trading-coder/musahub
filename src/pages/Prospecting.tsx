@@ -155,7 +155,7 @@ const Prospecting = () => {
       category: r.category,
       city: r.city,
       search_query: r.category,
-      polygon_data: r.polygon_data,
+      polygon_data: r.polygon_data as any,
     }));
 
     const { error } = await supabase.from('prospects').insert(inserts);
