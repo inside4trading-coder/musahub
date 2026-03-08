@@ -34,7 +34,7 @@ const Login = () => {
             <img
               src={musaLogo}
               alt="Musa Equipo Creativo"
-              className="w-80 h-auto brightness-0 invert"
+              className="w-96 h-auto brightness-0 invert"
             />
           </div>
 
