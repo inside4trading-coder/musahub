@@ -17,48 +17,69 @@ export type Database = {
       deals: {
         Row: {
           assigned_to: string | null
+          category: string | null
           company_name: string
           contact_name: string
           created_at: string
           created_by: string | null
           deal_value: number
           email: string | null
+          facebook: string | null
           id: string
+          instagram: string | null
+          linkedin: string | null
           notes: string | null
           phone: string | null
           stage: string
           tags: string[] | null
+          tiktok: string | null
           updated_at: string
+          website: string | null
+          whatsapp: string | null
         }
         Insert: {
           assigned_to?: string | null
+          category?: string | null
           company_name: string
           contact_name: string
           created_at?: string
           created_by?: string | null
           deal_value?: number
           email?: string | null
+          facebook?: string | null
           id?: string
+          instagram?: string | null
+          linkedin?: string | null
           notes?: string | null
           phone?: string | null
           stage?: string
           tags?: string[] | null
+          tiktok?: string | null
           updated_at?: string
+          website?: string | null
+          whatsapp?: string | null
         }
         Update: {
           assigned_to?: string | null
+          category?: string | null
           company_name?: string
           contact_name?: string
           created_at?: string
           created_by?: string | null
           deal_value?: number
           email?: string | null
+          facebook?: string | null
           id?: string
+          instagram?: string | null
+          linkedin?: string | null
           notes?: string | null
           phone?: string | null
           stage?: string
           tags?: string[] | null
+          tiktok?: string | null
           updated_at?: string
+          website?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }
