@@ -210,79 +210,103 @@ const CRM = () => {
         </div>
       </div>
 
-      {/* Kanban */}
+      {/* Kanban with scroll navigation */}
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent" style={{ scrollbarGutter: 'stable' }}>
-          {stages.map(stage => {
-            const stageDeals = filteredDeals.filter(d => d.stage === stage);
-            const totalValue = stageDeals.reduce((sum, d) => sum + Number(d.deal_value), 0);
-            return (
-              <Droppable key={stage} droppableId={stage}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={cn("min-w-[280px] w-[280px] rounded-2xl p-3 transition-colors", snapshot.isDraggingOver ? "bg-primary/5" : "bg-muted/50")}
-                  >
-                    <div className="flex items-center justify-between mb-3 px-1">
-                      <div className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: stageColors[stage] }} />
-                        <span className="text-sm font-bold text-heading">{stage}</span>
-                        <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground font-medium">{stageDeals.length}</span>
-                      </div>
-                      <span className="text-xs font-semibold text-primary">€{totalValue.toLocaleString()}</span>
-                    </div>
+        <div className="relative group/kanban">
+          {/* Left arrow */}
+          <button
+            onClick={() => kanbanRef.current?.scrollBy({ left: -300, behavior: 'smooth' })}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-card border border-border shadow-card flex items-center justify-center text-muted-foreground hover:text-heading hover:shadow-card-hover transition-all opacity-0 group-hover/kanban:opacity-100"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          {/* Right arrow */}
+          <button
+            onClick={() => kanbanRef.current?.scrollBy({ left: 300, behavior: 'smooth' })}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-card border border-border shadow-card flex items-center justify-center text-muted-foreground hover:text-heading hover:shadow-card-hover transition-all opacity-0 group-hover/kanban:opacity-100"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
 
-                    <div className="space-y-2 min-h-[100px]">
-                      {stageDeals.map((deal, i) => (
-                        <Draggable key={deal.id} draggableId={deal.id} index={i}>
-                          {(prov, snap) => (
-                            <div
-                              ref={prov.innerRef}
-                              {...prov.draggableProps}
-                              {...prov.dragHandleProps}
-                              onClick={() => { setSelectedDeal(deal); setEditing(false); }}
-                              className={cn("rounded-xl bg-card border border-border p-3 shadow-card cursor-pointer card-hover", snap.isDragging && "shadow-card-hover rotate-1")}
-                              style={{ ...prov.draggableProps.style, borderLeft: `4px solid ${stageColors[stage]}` }}
-                            >
-                              <p className="text-sm font-bold text-heading">{deal.company_name}</p>
-                              {(deal as any).category && (
-                                <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{(deal as any).category}</span>
-                              )}
-                              <p className="text-xs text-body mt-1 flex items-center gap-1">
-                                <User className="h-3 w-3" /> {deal.contact_name}
-                              </p>
-                              {deal.phone && <p className="text-[11px] text-muted-foreground mt-0.5">📞 {deal.phone}</p>}
-                              {deal.email && <p className="text-[11px] text-muted-foreground">✉️ {deal.email}</p>}
-                              {(deal as any).whatsapp && <p className="text-[11px] text-muted-foreground">💬 {(deal as any).whatsapp}</p>}
-                              <div className="flex flex-wrap gap-1.5 mt-1">
-                                {(deal as any).instagram && <span className="text-[10px] text-pink-500">📷</span>}
-                                {(deal as any).facebook && <span className="text-[10px] text-blue-600">📘</span>}
-                                {(deal as any).linkedin && <span className="text-[10px] text-blue-700">💼</span>}
-                                {(deal as any).tiktok && <span className="text-[10px]">🎵</span>}
-                                {(deal as any).website && <span className="text-[10px]">🌐</span>}
-                              </div>
-                              <div className="flex items-center justify-between mt-2">
-                                <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                                  €{Number(deal.deal_value).toLocaleString()}
-                                </span>
-                                <div className="flex gap-1">
-                                  {(deal.tags || []).map(t => (
-                                    <span key={t} className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground">{t}</span>
-                                  ))}
+          <div
+            ref={kanbanRef}
+            className="flex gap-4 overflow-x-auto pb-4 cursor-grab active:cursor-grabbing select-none"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
+            {stages.map(stage => {
+              const stageDeals = filteredDeals.filter(d => d.stage === stage);
+              const totalValue = stageDeals.reduce((sum, d) => sum + Number(d.deal_value), 0);
+              return (
+                <Droppable key={stage} droppableId={stage}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={cn("min-w-[280px] w-[280px] rounded-2xl p-3 transition-colors shrink-0", snapshot.isDraggingOver ? "bg-primary/5" : "bg-muted/50")}
+                    >
+                      <div className="flex items-center justify-between mb-3 px-1">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-3 rounded-full" style={{ backgroundColor: stageColors[stage] }} />
+                          <span className="text-sm font-bold text-heading">{stage}</span>
+                          <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground font-medium">{stageDeals.length}</span>
+                        </div>
+                        <span className="text-xs font-semibold text-primary">€{totalValue.toLocaleString()}</span>
+                      </div>
+
+                      <div className="space-y-2 min-h-[100px]">
+                        {stageDeals.map((deal, i) => (
+                          <Draggable key={deal.id} draggableId={deal.id} index={i}>
+                            {(prov, snap) => (
+                              <div
+                                ref={prov.innerRef}
+                                {...prov.draggableProps}
+                                {...prov.dragHandleProps}
+                                onClick={() => { setSelectedDeal(deal); setEditing(false); }}
+                                className={cn("rounded-xl bg-card border border-border p-3 shadow-card cursor-pointer card-hover", snap.isDragging && "shadow-card-hover rotate-1")}
+                                style={{ ...prov.draggableProps.style, borderLeft: `4px solid ${stageColors[stage]}` }}
+                              >
+                                <p className="text-sm font-bold text-heading">{deal.company_name}</p>
+                                {(deal as any).category && (
+                                  <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{(deal as any).category}</span>
+                                )}
+                                <p className="text-xs text-body mt-1 flex items-center gap-1">
+                                  <User className="h-3 w-3" /> {deal.contact_name}
+                                </p>
+                                {deal.phone && <p className="text-[11px] text-muted-foreground mt-0.5">📞 {deal.phone}</p>}
+                                {deal.email && <p className="text-[11px] text-muted-foreground">✉️ {deal.email}</p>}
+                                {(deal as any).whatsapp && <p className="text-[11px] text-muted-foreground">💬 {(deal as any).whatsapp}</p>}
+                                <div className="flex flex-wrap gap-1.5 mt-1">
+                                  {(deal as any).instagram && <span className="text-[10px] text-pink-500">📷</span>}
+                                  {(deal as any).facebook && <span className="text-[10px] text-blue-600">📘</span>}
+                                  {(deal as any).linkedin && <span className="text-[10px] text-blue-700">💼</span>}
+                                  {(deal as any).tiktok && <span className="text-[10px]">🎵</span>}
+                                  {(deal as any).website && <span className="text-[10px]">🌐</span>}
+                                </div>
+                                <div className="flex items-center justify-between mt-2">
+                                  <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                                    €{Number(deal.deal_value).toLocaleString()}
+                                  </span>
+                                  <div className="flex gap-1">
+                                    {(deal.tags || []).map(t => (
+                                      <span key={t} className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground">{t}</span>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </Droppable>
-            );
-          })}
+                  )}
+                </Droppable>
+              );
+            })}
+          </div>
         </div>
       </DragDropContext>
 
