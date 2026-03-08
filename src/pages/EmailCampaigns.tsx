@@ -438,12 +438,23 @@ const EmailCampaigns = () => {
 
                     <div>
                       <Label className="text-xs font-semibold text-heading">Asunto *</Label>
-                      <Input
-                        value={activeEmailStep.subject}
-                        onChange={e => updateEmailStep(activeStepIndex, 'subject', e.target.value)}
-                        className="rounded-[10px] bg-muted border-border mt-1"
-                        placeholder="Asunto del email para este paso"
-                      />
+                      {useThread && activeEmailStep.step_number > 1 ? (
+                        <div className="mt-1">
+                          <Input
+                            value={`Re: ${emailSteps[0]?.subject || ''}`}
+                            disabled
+                            className="rounded-[10px] bg-muted/60 border-border opacity-70"
+                          />
+                          <p className="text-[10px] text-muted-foreground mt-1">Asunto heredado del paso 1 (modo hilo activado)</p>
+                        </div>
+                      ) : (
+                        <Input
+                          value={activeEmailStep.subject}
+                          onChange={e => updateEmailStep(activeStepIndex, 'subject', e.target.value)}
+                          className="rounded-[10px] bg-muted border-border mt-1"
+                          placeholder="Asunto del email para este paso"
+                        />
+                      )}
                     </div>
 
                     <div>
