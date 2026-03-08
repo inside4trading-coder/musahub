@@ -1,1 +1,4 @@
 project_id = "ypvztymmshciokttiikm"
+
+[functions.process-scheduled-steps]
+verify_jwt = false
