@@ -213,7 +213,7 @@ const CRM = () => {
       created_by: user.id,
       note: newActivityNote.trim(),
       activity_date: newActivityDate || new Date().toISOString(),
-      activity_type: 'note',
+      activity_type: newActivityType,
     } as any);
     if (error) { toast.error('Error al agregar actividad'); }
     else {
