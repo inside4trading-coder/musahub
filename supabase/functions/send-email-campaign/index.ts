@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
@@ -33,7 +33,7 @@ serve(async (req) => {
     // Service role client for DB operations
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { campaign_id } = await req.json();
+    const { campaign_id, step_number } = await req.json();
     if (!campaign_id) throw new Error("campaign_id is required");
 
     // Fetch campaign
@@ -47,20 +47,40 @@ serve(async (req) => {
       throw new Error(`Campaign not found: ${campaignError?.message}`);
     }
 
-    if (campaign.status === "Enviada") {
-      throw new Error("Campaign already sent");
-    }
-
     const recipients = Array.isArray(campaign.recipients) ? campaign.recipients : [];
     if (recipients.length === 0) {
       throw new Error("No recipients in campaign");
     }
+
+    // If step_number provided, fetch the specific step
+    let stepData = null;
+    if (step_number) {
+      const { data: stepResult } = await supabase
+        .from("campaign_steps")
+        .select("*")
+        .eq("campaign_id", campaign_id)
+        .eq("step_number", step_number)
+        .single();
+      stepData = stepResult;
+    }
+
+    // Use step data if available, otherwise fall back to campaign data
+    const subject = stepData?.subject || campaign.subject;
+    const htmlBody = stepData?.html_body || campaign.html_body || "";
 
     // Update campaign status to "Enviando"
     await supabase
       .from("email_campaigns")
       .update({ status: "Enviando", sent_at: new Date().toISOString() })
       .eq("id", campaign_id);
+
+    // Update step status if applicable
+    if (stepData) {
+      await supabase
+        .from("campaign_steps")
+        .update({ status: "Enviando", sent_at: new Date().toISOString() })
+        .eq("id", stepData.id);
+    }
 
     // Create email_logs for each recipient
     const logs = recipients.map((r: any) => ({
@@ -79,13 +99,14 @@ serve(async (req) => {
     const n8nPayload = {
       campaign_id: campaign.id,
       campaign_name: campaign.campaign_name,
-      subject: campaign.subject,
+      subject,
       from_name: campaign.from_name || "Musa Agency",
       reply_to: campaign.reply_to || null,
-      html_body: campaign.html_body || "",
+      html_body: htmlBody,
       recipients,
       callback_url: callbackUrl,
       service_role_key: SUPABASE_SERVICE_ROLE_KEY,
+      step_number: step_number || 1,
     };
 
     const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
@@ -96,19 +117,53 @@ serve(async (req) => {
 
     if (!n8nResponse.ok) {
       const errorText = await n8nResponse.text();
-      // Revert status on failure
       await supabase
         .from("email_campaigns")
         .update({ status: "Error", sent_at: null })
         .eq("id", campaign_id);
 
+      if (stepData) {
+        await supabase
+          .from("campaign_steps")
+          .update({ status: "Error" })
+          .eq("id", stepData.id);
+      }
+
       throw new Error(`n8n webhook failed [${n8nResponse.status}]: ${errorText}`);
+    }
+
+    // Mark step as sent
+    if (stepData) {
+      await supabase
+        .from("campaign_steps")
+        .update({ status: "Enviada" })
+        .eq("id", stepData.id);
+    }
+
+    // Check if all steps are done
+    const { data: allSteps } = await supabase
+      .from("campaign_steps")
+      .select("status")
+      .eq("campaign_id", campaign_id);
+
+    const allDone = allSteps && allSteps.length > 0 && allSteps.every((s: any) => s.status === "Enviada");
+    if (allDone) {
+      await supabase
+        .from("email_campaigns")
+        .update({ status: "Enviada" })
+        .eq("id", campaign_id);
+    } else if (!allSteps || allSteps.length === 0) {
+      // No steps table usage, mark as sent directly
+      await supabase
+        .from("email_campaigns")
+        .update({ status: "Enviada" })
+        .eq("id", campaign_id);
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Campaign sent to ${recipients.length} recipients`,
+        message: `Step ${step_number || 1} sent to ${recipients.length} recipients`,
         campaign_id,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

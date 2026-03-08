@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaign_steps: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          delay_days: number
+          html_body: string | null
+          id: string
+          scheduled_for: string | null
+          sent_at: string | null
+          status: string
+          step_number: number
+          subject: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          delay_days?: number
+          html_body?: string | null
+          id?: string
+          scheduled_for?: string | null
+          sent_at?: string | null
+          status?: string
+          step_number?: number
+          subject: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          delay_days?: number
+          html_body?: string | null
+          id?: string
+          scheduled_for?: string | null
+          sent_at?: string | null
+          status?: string
+          step_number?: number
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_steps_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_activities: {
         Row: {
           activity_date: string
