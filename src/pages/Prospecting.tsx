@@ -142,7 +142,27 @@ const Prospecting = () => {
       return;
     }
 
-    const inserts = results.map(r => ({
+    // Deduplicate against existing prospects in DB
+    const existingNames = new Set(prospects.map(p => `${p.business_name}|${p.address}`));
+    const unique = results.filter(r => !existingNames.has(`${r.business_name}|${r.address}`));
+
+    // Also deduplicate within the batch itself
+    const seenInBatch = new Set<string>();
+    const deduped = unique.filter(r => {
+      const key = `${r.business_name}|${r.address}`;
+      if (seenInBatch.has(key)) return false;
+      seenInBatch.add(key);
+      return true;
+    });
+
+    if (deduped.length === 0) {
+      toast.info(`${results.length} negocios encontrados, pero todos ya están en la base de datos`);
+      setMapSearching(false);
+      return;
+    }
+
+    const skipped = results.length - deduped.length;
+    const inserts = deduped.map(r => ({
       business_name: r.business_name,
       address: r.address,
       phone: r.phone,
@@ -164,7 +184,10 @@ const Prospecting = () => {
       return;
     }
 
-    toast.success(`${results.length} negocios encontrados y guardados`);
+    const msg = skipped > 0
+      ? `${deduped.length} nuevos guardados (${skipped} duplicados omitidos)`
+      : `${deduped.length} negocios encontrados y guardados`;
+    toast.success(msg);
     fetchProspects();
     setMapSearching(false);
 
