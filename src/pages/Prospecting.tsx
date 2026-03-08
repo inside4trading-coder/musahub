@@ -271,14 +271,18 @@ const Prospecting = () => {
         }
 
         // Update each prospect with scraped data
-        const updates = Object.entries(scrapeData.results as Record<string, { email: string | null; whatsapp: string | null }>);
+        const updates = Object.entries(scrapeData.results as Record<string, { email: string | null; whatsapp: string | null; instagram: string | null; facebook: string | null; linkedin: string | null; tiktok: string | null }>);
         let found = 0;
         for (const [id, contact] of updates) {
-          if (contact.email || contact.whatsapp) {
+          if (contact.email || contact.whatsapp || contact.instagram || contact.facebook || contact.linkedin || contact.tiktok) {
             found++;
             await supabase.from('prospects').update({
               email: contact.email,
               whatsapp: contact.whatsapp,
+              instagram: contact.instagram,
+              facebook: contact.facebook,
+              linkedin: contact.linkedin,
+              tiktok: contact.tiktok,
             }).eq('id', id);
           }
         }
