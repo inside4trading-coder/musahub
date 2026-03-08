@@ -33,8 +33,6 @@ const Prospecting = () => {
   const [searchType, setSearchType] = useState(businessTypes[0]);
   const [searchTrigger, setSearchTrigger] = useState(0);
   const [mapSearching, setMapSearching] = useState(false);
-  const [scraping, setScraping] = useState(false);
-  const [scrapeProgress, setScrapeProgress] = useState('');
 
   const scrapeAllContacts = async () => {
     // Get prospects with website but no email and no whatsapp
