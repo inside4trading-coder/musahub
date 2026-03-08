@@ -615,6 +615,11 @@ const CRM = () => {
                     <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                       {activities.map(act => (
                         <div key={act.id} className="bg-muted/40 rounded-lg p-2.5 border border-border/50">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-medium">
+                              {act.activity_type === 'call' ? '📞 Llamada' : act.activity_type === 'meeting' ? '👥 Reunión' : act.activity_type === 'email' ? '📧 Email' : act.activity_type === 'followup' ? '🔄 Seguimiento' : '📝 Nota'}
+                            </Badge>
+                          </div>
                           <p className="text-sm text-body">{act.note}</p>
                           <div className="flex items-center gap-2 mt-1.5">
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
