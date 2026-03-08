@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Plus, Send, Calendar, Loader2, Copy, Trash2, Clock } from 'lucide-react';
+import { Mail, Plus, Send, Calendar, Loader2, Copy, Trash2, Clock, Link } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -64,6 +65,7 @@ const EmailCampaigns = () => {
     { step_number: 1, subject: '', html_body: '', delay_days: 0 },
   ]);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const [useThread, setUseThread] = useState(false);
 
   const addEmailStep = () => {
     const lastStep = emailSteps[emailSteps.length - 1];
@@ -140,10 +142,11 @@ const EmailCampaigns = () => {
 
     // Save steps
     if (emailSteps.length > 0) {
+      const firstSubject = emailSteps[0].subject;
       const stepsToInsert = emailSteps.map(s => ({
         campaign_id: data.id,
         step_number: s.step_number,
-        subject: s.subject,
+        subject: useThread && s.step_number > 1 ? `Re: ${firstSubject}` : s.subject,
         html_body: s.html_body || null,
         delay_days: s.delay_days,
         status: 'Pendiente',
@@ -164,8 +167,9 @@ const EmailCampaigns = () => {
       toast.error('Añade al menos un destinatario');
       return;
     }
-    if (emailSteps.some(s => !s.subject.trim())) {
-      toast.error('Todos los pasos necesitan un asunto');
+    const needsSubject = useThread ? emailSteps.slice(0, 1) : emailSteps;
+    if (needsSubject.some(s => !s.subject.trim())) {
+      toast.error(useThread ? 'El paso 1 necesita un asunto' : 'Todos los pasos necesitan un asunto');
       return;
     }
     setSaving(true);
@@ -192,10 +196,11 @@ const EmailCampaigns = () => {
 
     // 2. Save all steps with scheduled dates
     const now = new Date();
+    const firstSubject = emailSteps[0].subject;
     const stepsToInsert = emailSteps.map(s => ({
       campaign_id: data.id,
       step_number: s.step_number,
-      subject: s.subject,
+      subject: useThread && s.step_number > 1 ? `Re: ${firstSubject}` : s.subject,
       html_body: s.html_body || null,
       delay_days: s.delay_days,
       scheduled_for: addDays(now, s.delay_days).toISOString(),
@@ -274,6 +279,7 @@ const EmailCampaigns = () => {
     setForm({ campaign_name: '', from_name: 'Musa Agency', reply_to: '', recipients_text: '' });
     setEmailSteps([{ step_number: 1, subject: '', html_body: '', delay_days: 0 }]);
     setActiveStepIndex(0);
+    setUseThread(false);
     setStep(1);
   };
 
@@ -379,6 +385,21 @@ const EmailCampaigns = () => {
                   </Button>
                 </div>
 
+                {/* Thread toggle */}
+                {emailSteps.length > 1 && (
+                  <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
+                    <Switch checked={useThread} onCheckedChange={setUseThread} id="use-thread" />
+                    <div className="flex-1">
+                      <Label htmlFor="use-thread" className="text-xs font-semibold text-heading flex items-center gap-1.5 cursor-pointer">
+                        <Link className="h-3.5 w-3.5 text-primary" /> Enviar como hilo de correos
+                      </Label>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Todos los pasos usarán "Re: {emailSteps[0]?.subject || '(asunto del paso 1)'}" para que lleguen en el mismo hilo
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {activeEmailStep && (
                   <div className="rounded-xl border border-border bg-background p-4 space-y-3">
                     <div className="flex items-center justify-between">
@@ -421,12 +442,23 @@ const EmailCampaigns = () => {
 
                     <div>
                       <Label className="text-xs font-semibold text-heading">Asunto *</Label>
-                      <Input
-                        value={activeEmailStep.subject}
-                        onChange={e => updateEmailStep(activeStepIndex, 'subject', e.target.value)}
-                        className="rounded-[10px] bg-muted border-border mt-1"
-                        placeholder="Asunto del email para este paso"
-                      />
+                      {useThread && activeEmailStep.step_number > 1 ? (
+                        <div className="mt-1">
+                          <Input
+                            value={`Re: ${emailSteps[0]?.subject || ''}`}
+                            disabled
+                            className="rounded-[10px] bg-muted/60 border-border opacity-70"
+                          />
+                          <p className="text-[10px] text-muted-foreground mt-1">Asunto heredado del paso 1 (modo hilo activado)</p>
+                        </div>
+                      ) : (
+                        <Input
+                          value={activeEmailStep.subject}
+                          onChange={e => updateEmailStep(activeStepIndex, 'subject', e.target.value)}
+                          className="rounded-[10px] bg-muted border-border mt-1"
+                          placeholder="Asunto del email para este paso"
+                        />
+                      )}
                     </div>
 
                     <div>
@@ -477,7 +509,7 @@ const EmailCampaigns = () => {
                           </div>
                           <div className="pb-2">
                             <p className="text-xs font-semibold text-heading">
-                              {es.subject || `Paso ${es.step_number}`}
+                              {useThread && i > 0 ? `Re: ${emailSteps[0]?.subject || '...'}` : (es.subject || `Paso ${es.step_number}`)}
                             </p>
                             <p className="text-[10px] text-muted-foreground">
                               {es.delay_days === 0 ? 'Envío inmediato' : `+${es.delay_days} día${es.delay_days !== 1 ? 's' : ''} después`}
@@ -493,7 +525,7 @@ const EmailCampaigns = () => {
                   <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl">← Anterior</Button>
                   <Button
                     onClick={() => setStep(3)}
-                    disabled={emailSteps.some(s => !s.subject.trim())}
+                    disabled={useThread ? !emailSteps[0]?.subject.trim() : emailSteps.some(s => !s.subject.trim())}
                     className="rounded-xl bg-primary text-primary-foreground font-semibold"
                   >
                     Siguiente →
