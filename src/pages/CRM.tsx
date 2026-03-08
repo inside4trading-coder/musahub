@@ -142,6 +142,7 @@ const CRM = () => {
       linkedin: (selectedDeal as any).linkedin,
       tiktok: (selectedDeal as any).tiktok,
       whatsapp: (selectedDeal as any).whatsapp,
+      assigned_to: selectedDeal.assigned_to,
     });
     setEditing(true);
   };
