@@ -21,6 +21,9 @@ const businessTypes = [
 ];
 
 const Prospecting = () => {
+  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('prospecting_unlocked') === 'true');
+  const [pin, setPin] = useState('');
+  const [pinError, setPinError] = useState(false);
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
