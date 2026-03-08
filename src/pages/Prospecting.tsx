@@ -112,17 +112,16 @@ const Prospecting = () => {
   const handleExport = (rows: Prospect[]) => {
     if (rows.length === 0) { toast.info('No hay datos para exportar'); return; }
     const data = rows.map(p => ({
-      'Business Name': p.business_name,
-      'Category': p.category || '',
-      'Address': p.address || '',
-      'City': p.city || '',
-      'Phone': p.phone || '',
+      'Negocio': p.business_name,
+      'Categoría': p.category || '',
+      'Dirección': p.address || '',
+      'Ciudad': p.city || '',
+      'Teléfono': p.phone || '',
+      'WhatsApp': (p as any).whatsapp || '',
+      'Email': (p as any).email || '',
       'Rating': p.rating ?? '',
-      'Review Count': p.review_count ?? '',
-      'Website': p.website || '',
-      'Latitude': p.latitude ?? '',
-      'Longitude': p.longitude ?? '',
-      'Scraped Date': p.created_at,
+      'Reviews': p.review_count ?? '',
+      'Web': p.website || '',
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
