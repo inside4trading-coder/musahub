@@ -538,6 +538,7 @@ const CRM = () => {
                     {profiles.map(p => <option key={p.id} value={p.id}>{p.full_name || 'Sin nombre'}</option>)}
                   </select>
                 </div>
+                <p className="label-style pt-2">Redes Sociales</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs font-semibold text-heading">Instagram</Label>
