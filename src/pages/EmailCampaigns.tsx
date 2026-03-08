@@ -20,6 +20,8 @@ type EmailLog = Tables<'email_logs'>;
 
 const statusColors: Record<string, string> = {
   'Enviada': 'bg-primary/10 text-primary',
+  'Enviada (con errores)': 'bg-accent/80 text-accent-foreground',
+  'Enviando': 'bg-secondary/10 text-secondary',
   'Programada': 'bg-secondary/10 text-secondary',
   'Error': 'bg-destructive/10 text-destructive',
   'Borrador': 'bg-muted text-muted-foreground',
