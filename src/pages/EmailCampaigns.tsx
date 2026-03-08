@@ -20,6 +20,8 @@ type EmailLog = Tables<'email_logs'>;
 
 const statusColors: Record<string, string> = {
   'Enviada': 'bg-primary/10 text-primary',
+  'Enviada (con errores)': 'bg-accent/80 text-accent-foreground',
+  'Enviando': 'bg-secondary/10 text-secondary',
   'Programada': 'bg-secondary/10 text-secondary',
   'Error': 'bg-destructive/10 text-destructive',
   'Borrador': 'bg-muted text-muted-foreground',
@@ -111,6 +113,7 @@ const EmailCampaigns = () => {
     }
     setSaving(true);
 
+    // 1. Save campaign as "Borrador" first
     const { data, error } = await supabase.from('email_campaigns').insert({
       campaign_name: form.campaign_name,
       subject: form.subject,
@@ -118,25 +121,36 @@ const EmailCampaigns = () => {
       reply_to: form.reply_to || null,
       html_body: form.html_body || null,
       recipients: recipients as any,
-      status: 'Enviada',
-      sent_at: new Date().toISOString(),
+      status: 'Borrador',
       created_by: user.id,
     }).select().single();
 
-    if (error) {
+    if (error || !data) {
       toast.error('Error al crear campaña');
-    } else if (data) {
-      // Create email logs for each recipient
-      const logs = recipients.map(r => ({
-        campaign_id: data.id,
-        recipient_email: r.email,
-        status: 'pending',
-      }));
-      await supabase.from('email_logs').insert(logs);
-      toast.success(`Campaña creada con ${recipients.length} destinatarios`);
-      resetForm();
-      fetchCampaigns();
+      setSaving(false);
+      return;
     }
+
+    // 2. Call edge function to process & send via n8n
+    try {
+      const { data: fnData, error: fnError } = await supabase.functions.invoke('send-email-campaign', {
+        body: { campaign_id: data.id },
+      });
+
+      if (fnError) throw fnError;
+
+      if (fnData?.success) {
+        toast.success(`Campaña enviada a ${recipients.length} destinatarios vía n8n`);
+      } else {
+        toast.error(fnData?.error || 'Error al enviar campaña');
+      }
+    } catch (err: any) {
+      console.error('Send campaign error:', err);
+      toast.error(err.message || 'Error al conectar con el servicio de envío');
+    }
+
+    resetForm();
+    fetchCampaigns();
     setSaving(false);
   };
 
