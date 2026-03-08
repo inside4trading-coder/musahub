@@ -65,6 +65,7 @@ const EmailCampaigns = () => {
     { step_number: 1, subject: '', html_body: '', delay_days: 0 },
   ]);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const [useThread, setUseThread] = useState(false);
 
   const addEmailStep = () => {
     const lastStep = emailSteps[emailSteps.length - 1];
