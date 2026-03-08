@@ -14,16 +14,320 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      deals: {
+        Row: {
+          assigned_to: string | null
+          company_name: string
+          contact_name: string
+          created_at: string
+          created_by: string | null
+          deal_value: number
+          email: string | null
+          id: string
+          notes: string | null
+          phone: string | null
+          stage: string
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          company_name: string
+          contact_name: string
+          created_at?: string
+          created_by?: string | null
+          deal_value?: number
+          email?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          stage?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          company_name?: string
+          contact_name?: string
+          created_at?: string
+          created_by?: string | null
+          deal_value?: number
+          email?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          stage?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_campaigns: {
+        Row: {
+          campaign_name: string
+          created_at: string
+          created_by: string | null
+          from_name: string | null
+          html_body: string | null
+          id: string
+          recipients: Json | null
+          reply_to: string | null
+          scheduled_for: string | null
+          sent_at: string | null
+          status: string | null
+          subject: string
+        }
+        Insert: {
+          campaign_name: string
+          created_at?: string
+          created_by?: string | null
+          from_name?: string | null
+          html_body?: string | null
+          id?: string
+          recipients?: Json | null
+          reply_to?: string | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subject: string
+        }
+        Update: {
+          campaign_name?: string
+          created_at?: string
+          created_by?: string | null
+          from_name?: string | null
+          html_body?: string | null
+          id?: string
+          recipients?: Json | null
+          reply_to?: string | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subject?: string
+        }
+        Relationships: []
+      }
+      email_logs: {
+        Row: {
+          business_name: string | null
+          campaign_id: string | null
+          error_message: string | null
+          id: string
+          recipient_email: string
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          business_name?: string | null
+          campaign_id?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          business_name?: string | null
+          campaign_id?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_articles: {
+        Row: {
+          author_id: string | null
+          category: string
+          content: string | null
+          created_at: string
+          id: string
+          published: boolean | null
+          slug: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          category: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          published?: boolean | null
+          slug?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          category?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          published?: boolean | null
+          slug?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prospects: {
+        Row: {
+          added_to_crm: boolean | null
+          address: string | null
+          business_name: string
+          category: string | null
+          city: string | null
+          created_at: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          phone: string | null
+          polygon_data: Json | null
+          rating: number | null
+          review_count: number | null
+          search_query: string | null
+          website: string | null
+        }
+        Insert: {
+          added_to_crm?: boolean | null
+          address?: string | null
+          business_name: string
+          category?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          phone?: string | null
+          polygon_data?: Json | null
+          rating?: number | null
+          review_count?: number | null
+          search_query?: string | null
+          website?: string | null
+        }
+        Update: {
+          added_to_crm?: boolean | null
+          address?: string | null
+          business_name?: string
+          category?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          phone?: string | null
+          polygon_data?: Json | null
+          rating?: number | null
+          review_count?: number | null
+          search_query?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      saved_copies: {
+        Row: {
+          business_type: string | null
+          channel: string | null
+          city: string | null
+          copy_text: string
+          created_at: string
+          created_by: string | null
+          id: string
+          tone: string | null
+        }
+        Insert: {
+          business_type?: string | null
+          channel?: string | null
+          city?: string | null
+          copy_text: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          tone?: string | null
+        }
+        Update: {
+          business_type?: string | null
+          channel?: string | null
+          city?: string | null
+          copy_text?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          tone?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "team"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +454,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "team"],
+    },
   },
 } as const
