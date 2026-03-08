@@ -167,8 +167,9 @@ const EmailCampaigns = () => {
       toast.error('Añade al menos un destinatario');
       return;
     }
-    if (emailSteps.some(s => !s.subject.trim())) {
-      toast.error('Todos los pasos necesitan un asunto');
+    const needsSubject = useThread ? emailSteps.slice(0, 1) : emailSteps;
+    if (needsSubject.some(s => !s.subject.trim())) {
+      toast.error(useThread ? 'El paso 1 necesita un asunto' : 'Todos los pasos necesitan un asunto');
       return;
     }
     setSaving(true);
