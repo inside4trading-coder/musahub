@@ -19,6 +19,12 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const ProtectedLayout = () => (
+  <ProtectedRoute>
+    <AppLayout />
+  </ProtectedRoute>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -29,11 +35,7 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<Index />} />
-            <Route element={
-              <ProtectedRoute>
-                <AppLayout />
-              </ProtectedRoute>
-            }>
+            <Route element={<ProtectedLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/crm" element={<CRM />} />
               <Route path="/prospecting" element={<Prospecting />} />
