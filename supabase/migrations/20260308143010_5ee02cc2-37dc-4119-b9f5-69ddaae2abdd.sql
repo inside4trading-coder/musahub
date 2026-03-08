@@ -1,0 +1,2 @@
+ALTER TABLE public.prospects ADD COLUMN IF NOT EXISTS email text DEFAULT NULL;
+ALTER TABLE public.prospects ADD COLUMN IF NOT EXISTS whatsapp text DEFAULT NULL;

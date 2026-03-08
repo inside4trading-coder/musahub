@@ -216,6 +216,7 @@ export type Database = {
           category: string | null
           city: string | null
           created_at: string
+          email: string | null
           id: string
           latitude: number | null
           longitude: number | null
@@ -225,6 +226,7 @@ export type Database = {
           review_count: number | null
           search_query: string | null
           website: string | null
+          whatsapp: string | null
         }
         Insert: {
           added_to_crm?: boolean | null
@@ -233,6 +235,7 @@ export type Database = {
           category?: string | null
           city?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
@@ -242,6 +245,7 @@ export type Database = {
           review_count?: number | null
           search_query?: string | null
           website?: string | null
+          whatsapp?: string | null
         }
         Update: {
           added_to_crm?: boolean | null
@@ -250,6 +254,7 @@ export type Database = {
           category?: string | null
           city?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
@@ -259,6 +264,7 @@ export type Database = {
           review_count?: number | null
           search_query?: string | null
           website?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }
