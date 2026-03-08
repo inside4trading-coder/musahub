@@ -68,6 +68,11 @@ const CRM = () => {
   };
   const handleMouseUp = () => { isDraggingScroll.current = false; };
 
+  const fetchProfiles = useCallback(async () => {
+    const { data } = await supabase.from('profiles').select('id, full_name');
+    if (data) setProfiles(data);
+  }, []);
+
   const fetchDeals = useCallback(async () => {
     const { data, error } = await supabase
       .from('deals')
@@ -83,7 +88,13 @@ const CRM = () => {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchDeals(); }, [fetchDeals]);
+  useEffect(() => { fetchDeals(); fetchProfiles(); }, [fetchDeals, fetchProfiles]);
+
+  const getProfileName = (userId: string | null) => {
+    if (!userId) return null;
+    const p = profiles.find(pr => pr.id === userId);
+    return p?.full_name || 'Sin nombre';
+  };
 
   const onDragEnd = useCallback(async (result: DropResult) => {
     if (!result.destination) return;
