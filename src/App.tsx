@@ -11,7 +11,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import CRM from "./pages/CRM";
 import Prospecting from "./pages/Prospecting";
-import Generator from "./pages/Generator";
+
 import EmailCampaigns from "./pages/EmailCampaigns";
 import Knowledge from "./pages/Knowledge";
 import SettingsPage from "./pages/Settings";
@@ -39,7 +39,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/crm" element={<CRM />} />
               <Route path="/prospecting" element={<Prospecting />} />
-              <Route path="/generator" element={<Generator />} />
+              
               <Route path="/email-campaigns" element={<EmailCampaigns />} />
               <Route path="/knowledge" element={<Knowledge />} />
               <Route path="/settings" element={<SettingsPage />} />
