@@ -10,8 +10,8 @@ interface KpiData {
   dealCount: number;
   pipelineValue: number;
   prospectsThisMonth: number;
-  
   campaignsThisMonth: number;
+  wonDealsValue: number;
 }
 
 interface ActivityItem {
