@@ -19,7 +19,11 @@ const businessTypes = [
   'Farmacias', 'Dentistas', 'Bares',
 ];
 
+const Prospecting = () => {
   const [searchCity, setSearchCity] = useState('Madrid');
+  const [searchType, setSearchType] = useState(businessTypes[0]);
+  const [searchTrigger, setSearchTrigger] = useState(0);
+  const [mapSearching, setMapSearching] = useState(false);
   const [searchType, setSearchType] = useState(businessTypes[0]);
   const [searchTrigger, setSearchTrigger] = useState(0);
   const [mapSearching, setMapSearching] = useState(false);
