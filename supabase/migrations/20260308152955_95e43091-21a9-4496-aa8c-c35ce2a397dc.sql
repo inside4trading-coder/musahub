@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS deals_company_phone_unique ON public.deals (company_name, COALESCE(phone, ''));
