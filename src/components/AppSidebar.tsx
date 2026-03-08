@@ -11,7 +11,7 @@ const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'CRM', icon: Briefcase, path: '/crm' },
   { label: 'Prospección', icon: Map, path: '/prospecting' },
-  { label: 'Generador', icon: Sparkles, path: '/generator' },
+  
   { label: 'Email Campaigns', icon: Mail, path: '/email-campaigns' },
   { label: 'Knowledge Base', icon: BookOpen, path: '/knowledge' },
   { label: 'Configuración', icon: Settings, path: '/settings' },
