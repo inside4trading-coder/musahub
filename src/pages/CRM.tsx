@@ -105,6 +105,26 @@ const CRM = () => {
 
   useEffect(() => { fetchDeals(); fetchProfiles(); }, [fetchDeals, fetchProfiles]);
 
+  const fetchActivities = useCallback(async (dealId: string) => {
+    const { data } = await supabase
+      .from('deal_activities')
+      .select('*')
+      .eq('deal_id', dealId)
+      .order('activity_date', { ascending: false });
+    setActivities((data as DealActivity[]) || []);
+  }, []);
+
+  useEffect(() => {
+    if (selectedDeal) {
+      fetchActivities(selectedDeal.id);
+      setShowActivityForm(false);
+      setNewActivityNote('');
+      setNewActivityDate('');
+    } else {
+      setActivities([]);
+    }
+  }, [selectedDeal, fetchActivities]);
+
   const getProfileName = (userId: string | null) => {
     if (!userId) return null;
     const p = profiles.find(pr => pr.id === userId);
