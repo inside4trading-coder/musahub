@@ -18,7 +18,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extract campaign data from webhook\nconst input = $input.first().json;\n\nconst campaignId = input.campaign_id;\nconst subject = input.subject;\nconst fromName = input.from_name || 'Musa Agency';\nconst replyTo = input.reply_to || '';\nconst htmlBody = input.html_body || '';\nconst recipients = input.recipients || [];\nconst callbackUrl = input.callback_url;\nconst serviceRoleKey = input.service_role_key;\n\n// Create one item per recipient with all campaign data\nconst items = recipients.map((recipient, index) => {\n  // Replace template variables in subject and body\n  let personalizedSubject = subject;\n  let personalizedBody = htmlBody;\n  \n  // Replace all known variables\n  const vars = {\n    '{{email}}': recipient.email || '',\n    '{{business_name}}': recipient.business_name || '',\n    '{{contact_name}}': recipient.contact_name || '',\n    '{{city}}': recipient.city || '',\n    '{{company}}': recipient.business_name || '',\n    '{{phone}}': recipient.phone || '',\n  };\n  \n  for (const [key, value] of Object.entries(vars)) {\n    personalizedSubject = personalizedSubject.split(key).join(value);\n    personalizedBody = personalizedBody.split(key).join(value);\n  }\n  \n  return {\n    json: {\n      campaign_id: campaignId,\n      recipient_email: recipient.email,\n      business_name: recipient.business_name || null,\n      subject: personalizedSubject,\n      from_name: fromName,\n      reply_to: replyTo,\n      html_body: personalizedBody,\n      callback_url: callbackUrl,\n      service_role_key: serviceRoleKey,\n      recipient_index: index,\n      total_recipients: recipients.length,\n    }\n  };\n});\n\nreturn items;"
+        "jsCode": "const input = $input.first().json;\n\nconst campaignId = input.campaign_id;\nconst subject = input.subject;\nconst fromName = input.from_name || 'Musa Agency';\nconst replyTo = input.reply_to || '';\nconst htmlBody = input.html_body || '';\nconst recipients = input.recipients || [];\nconst callbackUrl = input.callback_url;\nconst serviceRoleKey = input.service_role_key;\n\nif (!campaignId || !subject || recipients.length === 0) {\n  throw new Error('Missing required fields: campaign_id, subject, or recipients');\n}\n\nconst items = recipients.map((recipient, index) => {\n  let personalizedSubject = subject;\n  let personalizedBody = htmlBody;\n\n  const vars = {\n    '{{email}}': recipient.email || '',\n    '{{business_name}}': recipient.business_name || '',\n    '{{contact_name}}': recipient.contact_name || '',\n    '{{city}}': recipient.city || '',\n    '{{company}}': recipient.business_name || '',\n    '{{phone}}': recipient.phone || '',\n  };\n\n  for (const [key, value] of Object.entries(vars)) {\n    personalizedSubject = personalizedSubject.split(key).join(value);\n    personalizedBody = personalizedBody.split(key).join(value);\n  }\n\n  return {\n    json: {\n      campaign_id: campaignId,\n      recipient_email: recipient.email,\n      business_name: recipient.business_name || null,\n      subject: personalizedSubject,\n      from_name: fromName,\n      reply_to: replyTo,\n      html_body: personalizedBody,\n      callback_url: callbackUrl,\n      service_role_key: serviceRoleKey,\n      recipient_index: index,\n      total_recipients: recipients.length,\n    }\n  };\n});\n\nreturn items;"
       },
       "id": "prepare-recipients",
       "name": "Prepare Recipients",
@@ -38,17 +38,6 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [720, 300]
-    },
-    {
-      "parameters": {
-        "value": 1500
-      },
-      "id": "wait-between-batches",
-      "name": "Wait 1.5s Between Batches",
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1.1,
-      "position": [720, 520],
-      "webhookId": "wait-batches"
     },
     {
       "parameters": {
@@ -72,27 +61,19 @@
           "id": "REPLACE_WITH_YOUR_SMTP_CREDENTIAL_ID",
           "name": "SMTP Account"
         }
-      }
+      },
+      "onError": "continueRegularOutput",
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "jsCode": "// Email sent successfully\nconst item = $input.first().json;\nreturn [{\n  json: {\n    campaign_id: item.campaign_id,\n    recipient_email: item.recipient_email,\n    status: 'sent',\n    error_message: null,\n    callback_url: item.callback_url,\n    service_role_key: item.service_role_key,\n  }\n}];"
+        "jsCode": "const item = $input.first().json;\n\n// Check if the previous node had an error (continueOnFail)\nconst hasError = item._error || item.error;\n\nif (hasError) {\n  const errorMsg = item._error?.message || item.error?.message || 'SMTP send error';\n  return [{\n    json: {\n      campaign_id: item.campaign_id,\n      recipient_email: item.recipient_email,\n      status: 'failed',\n      error_message: errorMsg,\n      callback_url: item.callback_url,\n      service_role_key: item.service_role_key,\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    campaign_id: item.campaign_id,\n    recipient_email: item.recipient_email,\n    status: 'sent',\n    error_message: null,\n    callback_url: item.callback_url,\n    service_role_key: item.service_role_key,\n  }\n}];"
       },
-      "id": "mark-success",
-      "name": "Mark Success",
+      "id": "check-result",
+      "name": "Check Send Result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1200, 240]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Email failed\nconst item = $input.first().json;\nconst errorMsg = $input.first().error?.message || 'Unknown send error';\nreturn [{\n  json: {\n    campaign_id: item.campaign_id,\n    recipient_email: item.recipient_email,\n    status: 'failed',\n    error_message: errorMsg,\n    callback_url: item.callback_url,\n    service_role_key: item.service_role_key,\n  }\n}];"
-      },
-      "id": "mark-failed",
-      "name": "Mark Failed",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1200, 420]
+      "position": [1200, 300]
     },
     {
       "parameters": {
@@ -123,7 +104,21 @@
       "name": "Callback to Supabase",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1440, 300]
+      "position": [1440, 300],
+      "onError": "continueRegularOutput",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "amount": 1.5,
+        "unit": "seconds"
+      },
+      "id": "wait-between-batches",
+      "name": "Wait 1.5s Between Batches",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1680, 300],
+      "webhookId": "wait-batches"
     },
     {
       "parameters": {},
@@ -131,7 +126,7 @@
       "name": "Done",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1680, 300]
+      "position": [1680, 520]
     }
   ],
   "connections": {
@@ -161,14 +156,14 @@
       "main": [
         [
           {
-            "node": "Send Email (SMTP)",
+            "node": "Wait 1.5s Between Batches",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Done",
+            "node": "Send Email (SMTP)",
             "type": "main",
             "index": 0
           }
@@ -179,25 +174,14 @@
       "main": [
         [
           {
-            "node": "Mark Success",
+            "node": "Check Send Result",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Mark Success": {
-      "main": [
-        [
-          {
-            "node": "Callback to Supabase",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Mark Failed": {
+    "Check Send Result": {
       "main": [
         [
           {
@@ -212,7 +196,7 @@
       "main": [
         [
           {
-            "node": "Wait 1.5s Between Batches",
+            "node": "Rate Limiter (5 per batch)",
             "type": "main",
             "index": 0
           }
@@ -223,7 +207,7 @@
       "main": [
         [
           {
-            "node": "Rate Limiter (5 per batch)",
+            "node": "Done",
             "type": "main",
             "index": 0
           }
