@@ -220,6 +220,7 @@ const CRM = () => {
       toast.success('Actividad registrada');
       setNewActivityNote('');
       setNewActivityDate('');
+      setNewActivityType('note');
       setShowActivityForm(false);
       fetchActivities(selectedDeal.id);
     }
