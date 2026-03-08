@@ -279,6 +279,7 @@ const EmailCampaigns = () => {
     setForm({ campaign_name: '', from_name: 'Musa Agency', reply_to: '', recipients_text: '' });
     setEmailSteps([{ step_number: 1, subject: '', html_body: '', delay_days: 0 }]);
     setActiveStepIndex(0);
+    setUseThread(false);
     setStep(1);
   };
 
