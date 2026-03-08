@@ -356,22 +356,9 @@ const Prospecting = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-heading lime-dot">Prospección</h1>
-          <p className="text-body text-sm mt-1">Encuentra y exporta prospectos por zona geográfica</p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={scrapeAllContacts} disabled={scraping} variant="outline" className="rounded-xl font-semibold">
-            {scraping
-              ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {scrapeProgress}</>
-              : <><Globe className="h-4 w-4 mr-2" /> Extraer contactos</>
-            }
-          </Button>
-          <Button onClick={() => handleExport(filtered)} className="rounded-xl bg-primary text-primary-foreground font-semibold">
-            <Download className="h-4 w-4 mr-2" /> Exportar .xlsx
-          </Button>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-heading lime-dot">Prospección</h1>
+        <p className="text-body text-sm mt-1">Encuentra y exporta prospectos por zona geográfica</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-200px)]">
