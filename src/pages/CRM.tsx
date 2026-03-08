@@ -46,6 +46,7 @@ const CRM = () => {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Deal>>({});
+  const [profiles, setProfiles] = useState<Profile[]>([]);
 
   // Mouse drag-to-scroll for kanban
   const kanbanRef = useRef<HTMLDivElement>(null);
