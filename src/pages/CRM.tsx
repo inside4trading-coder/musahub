@@ -227,6 +227,13 @@ const CRM = () => {
                 </div>
               </div>
               <div>
+                <Label className="text-xs font-semibold text-heading">Owner</Label>
+                <select value={newDeal.assigned_to} onChange={e => setNewDeal(p => ({ ...p, assigned_to: e.target.value }))} className="w-full h-10 rounded-[10px] bg-muted border border-border px-3 text-sm mt-1">
+                  <option value="">Sin asignar</option>
+                  {profiles.map(p => <option key={p.id} value={p.id}>{p.full_name || 'Sin nombre'}</option>)}
+                </select>
+              </div>
+              <div>
                 <Label className="text-xs font-semibold text-heading">Notas</Label>
                 <Textarea value={newDeal.notes || ''} onChange={e => setNewDeal(p => ({ ...p, notes: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" rows={3} />
               </div>
