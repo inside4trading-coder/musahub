@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Plus, Search, Euro, Phone, Mail as MailIcon, User, Loader2, Pencil, Trash2, Globe, X, Save, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, Euro, Phone, Mail as MailIcon, User, Loader2, Pencil, Trash2, Globe, X, Save, ChevronLeft, ChevronRight, MessageSquarePlus, Clock, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,9 +14,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
+import { format } from 'date-fns';
 
 type Deal = Tables<'deals'>;
 type Profile = { id: string; full_name: string | null };
+type DealActivity = {
+  id: string;
+  deal_id: string;
+  created_by: string | null;
+  activity_type: string;
+  note: string;
+  activity_date: string;
+  created_at: string;
+};
 
 const stageColors: Record<string, string> = {
   'Lead': '#9BA3B2',
@@ -48,7 +58,11 @@ const CRM = () => {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Deal>>({});
   const [profiles, setProfiles] = useState<Profile[]>([]);
-
+  const [activities, setActivities] = useState<DealActivity[]>([]);
+  const [newActivityNote, setNewActivityNote] = useState('');
+  const [newActivityDate, setNewActivityDate] = useState('');
+  const [addingActivity, setAddingActivity] = useState(false);
+  const [showActivityForm, setShowActivityForm] = useState(false);
   // Mouse drag-to-scroll for kanban
   const kanbanRef = useRef<HTMLDivElement>(null);
   const isDraggingScroll = useRef(false);
@@ -90,6 +104,26 @@ const CRM = () => {
   }, []);
 
   useEffect(() => { fetchDeals(); fetchProfiles(); }, [fetchDeals, fetchProfiles]);
+
+  const fetchActivities = useCallback(async (dealId: string) => {
+    const { data } = await supabase
+      .from('deal_activities')
+      .select('*')
+      .eq('deal_id', dealId)
+      .order('activity_date', { ascending: false });
+    setActivities((data as DealActivity[]) || []);
+  }, []);
+
+  useEffect(() => {
+    if (selectedDeal) {
+      fetchActivities(selectedDeal.id);
+      setShowActivityForm(false);
+      setNewActivityNote('');
+      setNewActivityDate('');
+    } else {
+      setActivities([]);
+    }
+  }, [selectedDeal, fetchActivities]);
 
   const getProfileName = (userId: string | null) => {
     if (!userId) return null;
@@ -166,6 +200,27 @@ const CRM = () => {
     const { error } = await supabase.from('deals').delete().eq('id', id);
     if (error) { toast.error('Error al eliminar deal'); }
     else { toast.success('Deal eliminado'); setSelectedDeal(null); setEditing(false); fetchDeals(); }
+  };
+
+  const handleAddActivity = async () => {
+    if (!selectedDeal || !newActivityNote.trim() || !user) return;
+    setAddingActivity(true);
+    const { error } = await supabase.from('deal_activities').insert({
+      deal_id: selectedDeal.id,
+      created_by: user.id,
+      note: newActivityNote.trim(),
+      activity_date: newActivityDate || new Date().toISOString(),
+      activity_type: 'note',
+    } as any);
+    if (error) { toast.error('Error al agregar actividad'); }
+    else {
+      toast.success('Actividad registrada');
+      setNewActivityNote('');
+      setNewActivityDate('');
+      setShowActivityForm(false);
+      fetchActivities(selectedDeal.id);
+    }
+    setAddingActivity(false);
   };
 
   const filteredDeals = deals.filter(d => {
@@ -486,6 +541,77 @@ const CRM = () => {
                       <span key={t} className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">{t}</span>
                     ))}
                   </div>
+                </div>
+
+                {/* Activity Log */}
+                <div className="border-t border-border pt-4 mt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="label-style flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5" /> Registro de Actividades
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowActivityForm(!showActivityForm)}
+                      className="rounded-lg h-7 text-xs gap-1"
+                    >
+                      <MessageSquarePlus className="h-3 w-3" /> Nueva
+                    </Button>
+                  </div>
+
+                  {showActivityForm && (
+                    <div className="bg-muted/50 rounded-xl p-3 mb-3 space-y-2">
+                      <Textarea
+                        placeholder="Describe la actividad..."
+                        value={newActivityNote}
+                        onChange={e => setNewActivityNote(e.target.value)}
+                        className="rounded-[10px] bg-background border-border text-sm min-h-[60px]"
+                        rows={2}
+                      />
+                      <div className="flex gap-2 items-end">
+                        <div className="flex-1">
+                          <Label className="text-[10px] font-semibold text-muted-foreground">Fecha</Label>
+                          <Input
+                            type="datetime-local"
+                            value={newActivityDate}
+                            onChange={e => setNewActivityDate(e.target.value)}
+                            className="rounded-[10px] bg-background border-border text-xs h-8 mt-0.5"
+                          />
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={handleAddActivity}
+                          disabled={!newActivityNote.trim() || addingActivity}
+                          className="rounded-lg h-8 text-xs bg-primary text-primary-foreground"
+                        >
+                          {addingActivity ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Guardar'}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {activities.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-4">Sin actividades registradas</p>
+                  ) : (
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                      {activities.map(act => (
+                        <div key={act.id} className="bg-muted/40 rounded-lg p-2.5 border border-border/50">
+                          <p className="text-sm text-body">{act.note}</p>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <Calendar className="h-2.5 w-2.5" />
+                              {format(new Date(act.activity_date), 'dd/MM/yyyy HH:mm')}
+                            </span>
+                            {act.created_by && (
+                              <span className="text-[10px] text-muted-foreground">
+                                • {getProfileName(act.created_by)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </>
