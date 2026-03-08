@@ -33,6 +33,62 @@ const Prospecting = () => {
   const [searchType, setSearchType] = useState(businessTypes[0]);
   const [searchTrigger, setSearchTrigger] = useState(0);
   const [mapSearching, setMapSearching] = useState(false);
+  const [scraping, setScraping] = useState(false);
+  const [scrapeProgress, setScrapeProgress] = useState('');
+
+  const scrapeAllContacts = async () => {
+    // Get prospects with website but no email and no whatsapp
+    const toScrape = prospects.filter(p => p.website && !(p as any).email && !(p as any).whatsapp);
+    if (toScrape.length === 0) {
+      toast.info('No hay prospectos pendientes de scrapear');
+      return;
+    }
+
+    setScraping(true);
+    const chunkSize = 10;
+    let totalFound = 0;
+    let processed = 0;
+
+    for (let i = 0; i < toScrape.length; i += chunkSize) {
+      const chunk = toScrape.slice(i, i + chunkSize);
+      setScrapeProgress(`${processed}/${toScrape.length} procesados…`);
+
+      try {
+        const { data: scrapeData, error: scrapeError } = await supabase.functions.invoke('scrape-contacts', {
+          body: { websites: chunk.map(p => ({ id: p.id, url: p.website! })) },
+        });
+
+        if (scrapeError || !scrapeData?.success) {
+          console.warn('Chunk scrape error:', scrapeError || scrapeData?.error);
+          processed += chunk.length;
+          continue;
+        }
+
+        const updates = Object.entries(scrapeData.results as Record<string, { email: string | null; whatsapp: string | null }>);
+        for (const [id, contact] of updates) {
+          if (contact.email || contact.whatsapp) {
+            totalFound++;
+            await supabase.from('prospects').update({
+              email: contact.email,
+              whatsapp: contact.whatsapp,
+            }).eq('id', id);
+          }
+        }
+      } catch (err) {
+        console.warn('Chunk failed:', err);
+      }
+      processed += chunk.length;
+    }
+
+    setScraping(false);
+    setScrapeProgress('');
+    if (totalFound > 0) {
+      toast.success(`Se encontraron datos de contacto en ${totalFound} de ${toScrape.length} webs`);
+    } else {
+      toast.info(`Se procesaron ${toScrape.length} webs, no se encontraron contactos`);
+    }
+    fetchProspects();
+  };
 
   const fetchProspects = useCallback(async () => {
     const { data, error } = await supabase
