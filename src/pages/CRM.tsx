@@ -14,9 +14,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
+import { format } from 'date-fns';
 
 type Deal = Tables<'deals'>;
 type Profile = { id: string; full_name: string | null };
+type DealActivity = {
+  id: string;
+  deal_id: string;
+  created_by: string | null;
+  activity_type: string;
+  note: string;
+  activity_date: string;
+  created_at: string;
+};
 
 const stageColors: Record<string, string> = {
   'Lead': '#9BA3B2',
