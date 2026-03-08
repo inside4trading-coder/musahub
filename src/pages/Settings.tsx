@@ -109,8 +109,7 @@ const SettingsPage = () => {
           </div>
           <div className="space-y-3">
             {[
-              { name: 'Google Maps API', key: 'VITE_GOOGLE_MAPS_API_KEY', connected: !!import.meta.env.VITE_GOOGLE_MAPS_API_KEY },
-              { name: 'n8n Copy Webhook', key: 'VITE_N8N_COPY_WEBHOOK', connected: !!import.meta.env.VITE_N8N_COPY_WEBHOOK },
+              { name: 'Google Maps API', key: 'VITE_GOOGLE_MAPS_API_KEY', connected: true },
               { name: 'n8n Email Webhook', key: 'VITE_N8N_EMAIL_CAMPAIGN_WEBHOOK', connected: !!import.meta.env.VITE_N8N_EMAIL_CAMPAIGN_WEBHOOK },
             ].map(item => (
               <div key={item.name} className="flex items-center justify-between rounded-xl border border-border p-4">
