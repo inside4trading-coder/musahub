@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Briefcase, Euro, Users, Mail, BookOpen, ArrowRight, Loader2 } from 'lucide-react';
+import { Briefcase, Euro, Users, Mail, BookOpen, ArrowRight, Loader2, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
@@ -10,8 +10,8 @@ interface KpiData {
   dealCount: number;
   pipelineValue: number;
   prospectsThisMonth: number;
-  
   campaignsThisMonth: number;
+  wonDealsValue: number;
 }
 
 interface ActivityItem {
@@ -41,13 +41,14 @@ const Dashboard = () => {
       const deals = dealsRes.data || [];
       const activeDealStages = ['Lead', 'Contactado', 'Propuesta Enviada', 'Negociación'];
       const activeDeals = deals.filter(d => activeDealStages.includes(d.stage));
+      const wonDeals = deals.filter(d => d.stage === 'Cerrado Ganado');
 
       setKpis({
         dealCount: activeDeals.length,
         pipelineValue: activeDeals.reduce((s, d) => s + Number(d.deal_value), 0),
         prospectsThisMonth: (prospectsRes.data || []).length,
-        
         campaignsThisMonth: (campaignsRes.data || []).length,
+        wonDealsValue: wonDeals.reduce((s, d) => s + Number(d.deal_value), 0),
       });
 
       // Build recent activity from all sources
@@ -79,8 +80,8 @@ const Dashboard = () => {
   const kpiCards = kpis ? [
     { label: 'Deals en Pipeline', value: String(kpis.dealCount), icon: Briefcase },
     { label: 'Valor Pipeline', value: `€${kpis.pipelineValue.toLocaleString()}`, icon: Euro },
+    { label: 'Negocios Ganados', value: `€${kpis.wonDealsValue.toLocaleString()}`, icon: Trophy },
     { label: 'Prospectos este mes', value: String(kpis.prospectsThisMonth), icon: Users },
-    
     { label: 'Campañas este mes', value: String(kpis.campaignsThisMonth), icon: Mail },
   ] : [];
 

@@ -212,7 +212,7 @@ const CRM = () => {
 
       {/* Kanban */}
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent" style={{ scrollbarGutter: 'stable' }}>
           {stages.map(stage => {
             const stageDeals = filteredDeals.filter(d => d.stage === stage);
             const totalValue = stageDeals.reduce((sum, d) => sum + Number(d.deal_value), 0);
