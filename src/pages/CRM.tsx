@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Plus, Search, Euro, Phone, Mail as MailIcon, User, Loader2, Pencil, Trash2, Globe, X, Save } from 'lucide-react';
+import { Plus, Search, Euro, Phone, Mail as MailIcon, User, Loader2, Pencil, Trash2, Globe, X, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
