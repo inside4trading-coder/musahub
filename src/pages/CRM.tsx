@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Plus, Search, Euro, Phone, Mail as MailIcon, User, X } from 'lucide-react';
+import { Plus, Search, Euro, Phone, Mail as MailIcon, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,18 +9,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 
-interface Deal {
-  id: string;
-  company_name: string;
-  contact_name: string;
-  email: string;
-  phone: string;
-  deal_value: number;
-  stage: string;
-  notes: string;
-  tags: string[];
-}
+type Deal = Tables<'deals'>;
 
 const stageColors: Record<string, string> = {
   'Lead': '#9BA3B2',
@@ -33,44 +27,133 @@ const stageColors: Record<string, string> = {
 
 const stages = Object.keys(stageColors);
 
-const initialDeals: Deal[] = [
-  { id: '1', company_name: 'Hotel Riverside', contact_name: 'Carlos López', email: 'carlos@hotel.com', phone: '+34 612 345 678', deal_value: 8500, stage: 'Lead', notes: 'Interesado en chatbot', tags: ['hotel', 'chatbot'] },
-  { id: '2', company_name: 'Clínica Dental Sol', contact_name: 'Ana García', email: 'ana@clinica.com', phone: '+34 623 456 789', deal_value: 12000, stage: 'Contactado', notes: 'Automatización citas', tags: ['salud'] },
-  { id: '3', company_name: 'Restaurante La Plaza', contact_name: 'Miguel Torres', email: 'miguel@rest.com', phone: '+34 634 567 890', deal_value: 5500, stage: 'Propuesta Enviada', notes: 'WhatsApp marketing', tags: ['restaurante'] },
-  { id: '4', company_name: 'Gym Fitness Pro', contact_name: 'Laura Ruiz', email: 'laura@gym.com', phone: '+34 645 678 901', deal_value: 15000, stage: 'Negociación', notes: 'Lead gen + CRM', tags: ['fitness', 'crm'] },
-  { id: '5', company_name: 'Inmobiliaria Costa', contact_name: 'Pedro Sánchez', email: 'pedro@inmo.com', phone: '+34 656 789 012', deal_value: 20000, stage: 'Cerrado Ganado', notes: 'Proyecto completo', tags: ['inmobiliaria'] },
-];
-
-const emptyDeal: Omit<Deal, 'id'> = {
+const emptyDeal = {
   company_name: '', contact_name: '', email: '', phone: '',
-  deal_value: 0, stage: 'Lead', notes: '', tags: [],
+  deal_value: 0, stage: 'Lead', notes: '', tags: [] as string[],
 };
 
 const CRM = () => {
-  const [deals, setDeals] = useState<Deal[]>(initialDeals);
+  const { user } = useAuth();
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [showNewDeal, setShowNewDeal] = useState(false);
   const [newDeal, setNewDeal] = useState(emptyDeal);
+  const [saving, setSaving] = useState(false);
 
-  const onDragEnd = useCallback((result: DropResult) => {
+  // Fetch deals
+  const fetchDeals = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('deals')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      toast.error('Error al cargar deals');
+      console.error(error);
+    } else {
+      setDeals(data || []);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchDeals();
+  }, [fetchDeals]);
+
+  // Drag & drop → update stage in DB
+  const onDragEnd = useCallback(async (result: DropResult) => {
     if (!result.destination) return;
     const dealId = result.draggableId;
     const newStage = result.destination.droppableId;
+
+    // Optimistic update
     setDeals(prev => prev.map(d => d.id === dealId ? { ...d, stage: newStage } : d));
-  }, []);
+
+    const { error } = await supabase
+      .from('deals')
+      .update({ stage: newStage })
+      .eq('id', dealId);
+
+    if (error) {
+      toast.error('Error al mover deal');
+      fetchDeals(); // revert
+    }
+  }, [fetchDeals]);
+
+  // Create deal
+  const handleAddDeal = async () => {
+    if (!user) return;
+    setSaving(true);
+
+    const insert: TablesInsert<'deals'> = {
+      company_name: newDeal.company_name,
+      contact_name: newDeal.contact_name,
+      email: newDeal.email || null,
+      phone: newDeal.phone || null,
+      deal_value: newDeal.deal_value,
+      stage: newDeal.stage,
+      notes: newDeal.notes || null,
+      tags: newDeal.tags,
+      created_by: user.id,
+    };
+
+    const { error } = await supabase.from('deals').insert(insert);
+
+    if (error) {
+      toast.error('Error al crear deal');
+      console.error(error);
+    } else {
+      toast.success('Deal creado');
+      setNewDeal(emptyDeal);
+      setShowNewDeal(false);
+      fetchDeals();
+    }
+    setSaving(false);
+  };
+
+  // Update deal from drawer
+  const handleUpdateDeal = async (updated: Partial<Deal>) => {
+    if (!selectedDeal) return;
+    const { error } = await supabase
+      .from('deals')
+      .update(updated)
+      .eq('id', selectedDeal.id);
+
+    if (error) {
+      toast.error('Error al actualizar deal');
+    } else {
+      toast.success('Deal actualizado');
+      setSelectedDeal(prev => prev ? { ...prev, ...updated } : null);
+      fetchDeals();
+    }
+  };
+
+  // Delete deal
+  const handleDeleteDeal = async (id: string) => {
+    const { error } = await supabase.from('deals').delete().eq('id', id);
+    if (error) {
+      toast.error('Error al eliminar deal');
+    } else {
+      toast.success('Deal eliminado');
+      setSelectedDeal(null);
+      fetchDeals();
+    }
+  };
 
   const filteredDeals = deals.filter(d =>
     d.company_name.toLowerCase().includes(search.toLowerCase()) ||
     d.contact_name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAddDeal = () => {
-    const deal: Deal = { ...newDeal, id: Date.now().toString() };
-    setDeals(prev => [...prev, deal]);
-    setNewDeal(emptyDeal);
-    setShowNewDeal(false);
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
@@ -105,11 +188,11 @@ const CRM = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs font-semibold text-heading">Email</Label>
-                  <Input value={newDeal.email} onChange={e => setNewDeal(p => ({ ...p, email: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" />
+                  <Input value={newDeal.email || ''} onChange={e => setNewDeal(p => ({ ...p, email: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" />
                 </div>
                 <div>
                   <Label className="text-xs font-semibold text-heading">Teléfono</Label>
-                  <Input value={newDeal.phone} onChange={e => setNewDeal(p => ({ ...p, phone: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" />
+                  <Input value={newDeal.phone || ''} onChange={e => setNewDeal(p => ({ ...p, phone: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -130,9 +213,10 @@ const CRM = () => {
               </div>
               <div>
                 <Label className="text-xs font-semibold text-heading">Notas</Label>
-                <Textarea value={newDeal.notes} onChange={e => setNewDeal(p => ({ ...p, notes: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" rows={3} />
+                <Textarea value={newDeal.notes || ''} onChange={e => setNewDeal(p => ({ ...p, notes: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" rows={3} />
               </div>
-              <Button onClick={handleAddDeal} disabled={!newDeal.company_name || !newDeal.contact_name} className="w-full rounded-xl bg-primary text-primary-foreground font-semibold">
+              <Button onClick={handleAddDeal} disabled={!newDeal.company_name || !newDeal.contact_name || saving} className="w-full rounded-xl bg-primary text-primary-foreground font-semibold">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Crear Deal
               </Button>
             </div>
@@ -158,7 +242,7 @@ const CRM = () => {
         <div className="flex gap-4 overflow-x-auto pb-4">
           {stages.map(stage => {
             const stageDeals = filteredDeals.filter(d => d.stage === stage);
-            const totalValue = stageDeals.reduce((sum, d) => sum + d.deal_value, 0);
+            const totalValue = stageDeals.reduce((sum, d) => sum + Number(d.deal_value), 0);
             return (
               <Droppable key={stage} droppableId={stage}>
                 {(provided, snapshot) => (
@@ -170,7 +254,6 @@ const CRM = () => {
                       snapshot.isDraggingOver ? "bg-primary/5" : "bg-muted/50"
                     )}
                   >
-                    {/* Column header */}
                     <div className="flex items-center justify-between mb-3 px-1">
                       <div className="flex items-center gap-2">
                         <div className="h-3 w-3 rounded-full" style={{ backgroundColor: stageColors[stage] }} />
@@ -180,7 +263,6 @@ const CRM = () => {
                       <span className="text-xs font-semibold text-primary">€{totalValue.toLocaleString()}</span>
                     </div>
 
-                    {/* Cards */}
                     <div className="space-y-2 min-h-[100px]">
                       {stageDeals.map((deal, i) => (
                         <Draggable key={deal.id} draggableId={deal.id} index={i}>
@@ -205,10 +287,10 @@ const CRM = () => {
                               </p>
                               <div className="flex items-center justify-between mt-2">
                                 <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                                  €{deal.deal_value.toLocaleString()}
+                                  €{Number(deal.deal_value).toLocaleString()}
                                 </span>
                                 <div className="flex gap-1">
-                                  {deal.tags.map(t => (
+                                  {(deal.tags || []).map(t => (
                                     <span key={t} className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground">{t}</span>
                                   ))}
                                 </div>
@@ -244,17 +326,21 @@ const CRM = () => {
                   <User className="h-4 w-4 text-muted-foreground" />
                   <span className="text-body">{selectedDeal.contact_name}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <MailIcon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-body">{selectedDeal.email}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-body">{selectedDeal.phone}</span>
-                </div>
+                {selectedDeal.email && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <MailIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-body">{selectedDeal.email}</span>
+                  </div>
+                )}
+                {selectedDeal.phone && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-body">{selectedDeal.phone}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-sm">
                   <Euro className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-lg font-bold text-primary">€{selectedDeal.deal_value.toLocaleString()}</span>
+                  <span className="text-lg font-bold text-primary">€{Number(selectedDeal.deal_value).toLocaleString()}</span>
                 </div>
                 <div>
                   <p className="label-style mb-1">Etapa</p>
@@ -275,7 +361,7 @@ const CRM = () => {
                 <div>
                   <p className="label-style mb-1">Tags</p>
                   <div className="flex flex-wrap gap-1">
-                    {selectedDeal.tags.map(t => (
+                    {(selectedDeal.tags || []).map(t => (
                       <span key={t} className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">{t}</span>
                     ))}
                   </div>
