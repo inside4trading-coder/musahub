@@ -157,14 +157,55 @@ const Prospecting = () => {
       polygon_data: r.polygon_data as any,
     }));
 
-    const { error } = await supabase.from('prospects').insert(inserts);
+    const { data: inserted, error } = await supabase.from('prospects').insert(inserts).select('id, website');
     if (error) {
       toast.error('Error al guardar prospectos');
-    } else {
-      toast.success(`${results.length} negocios encontrados y guardados`);
-      fetchProspects();
+      setMapSearching(false);
+      return;
     }
+
+    toast.success(`${results.length} negocios encontrados y guardados`);
+    fetchProspects();
     setMapSearching(false);
+
+    // Scrape websites for email/whatsapp in background
+    const withWebsite = (inserted || []).filter(p => p.website);
+    if (withWebsite.length > 0) {
+      toast.info(`Extrayendo emails y WhatsApp de ${withWebsite.length} webs…`);
+      try {
+        const { data: scrapeData, error: scrapeError } = await supabase.functions.invoke('scrape-contacts', {
+          body: { websites: withWebsite.map(p => ({ id: p.id, url: p.website! })) },
+        });
+
+        if (scrapeError || !scrapeData?.success) {
+          console.warn('Scraping error:', scrapeError || scrapeData?.error);
+          toast.error('Error al extraer contactos de las webs');
+          return;
+        }
+
+        // Update each prospect with scraped data
+        const updates = Object.entries(scrapeData.results as Record<string, { email: string | null; whatsapp: string | null }>);
+        let found = 0;
+        for (const [id, contact] of updates) {
+          if (contact.email || contact.whatsapp) {
+            found++;
+            await supabase.from('prospects').update({
+              email: contact.email,
+              whatsapp: contact.whatsapp,
+            }).eq('id', id);
+          }
+        }
+
+        if (found > 0) {
+          toast.success(`Se encontraron datos de contacto en ${found} webs`);
+          fetchProspects();
+        } else {
+          toast.info('No se encontraron emails ni WhatsApp en las webs');
+        }
+      } catch (err) {
+        console.warn('Scrape failed:', err);
+      }
+    }
   };
 
   if (loading) {
