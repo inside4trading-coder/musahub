@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 
 type Deal = Tables<'deals'>;
+type Profile = { id: string; full_name: string | null };
 
 const stageColors: Record<string, string> = {
   'Lead': '#9BA3B2',
