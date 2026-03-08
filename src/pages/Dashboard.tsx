@@ -10,7 +10,7 @@ interface KpiData {
   dealCount: number;
   pipelineValue: number;
   prospectsThisMonth: number;
-  copiesThisMonth: number;
+  
   campaignsThisMonth: number;
 }
 
