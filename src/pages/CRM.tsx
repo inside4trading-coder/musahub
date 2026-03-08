@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Plus, Search, Euro, Phone, Mail as MailIcon, User, Loader2, Pencil, Trash2, Globe, X, Save, ChevronLeft, ChevronRight, MessageSquarePlus, Clock, Calendar } from 'lucide-react';
+import { Plus, Search, Euro, Phone, Mail as MailIcon, User, Loader2, Pencil, Trash2, Globe, X, Save, ChevronLeft, ChevronRight, MessageSquarePlus, Clock, Calendar, PhoneCall, Users, Send, RefreshCw } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -63,6 +65,7 @@ const CRM = () => {
   const [newActivityDate, setNewActivityDate] = useState('');
   const [addingActivity, setAddingActivity] = useState(false);
   const [showActivityForm, setShowActivityForm] = useState(false);
+  const [newActivityType, setNewActivityType] = useState('note');
   // Mouse drag-to-scroll for kanban
   const kanbanRef = useRef<HTMLDivElement>(null);
   const isDraggingScroll = useRef(false);
@@ -210,13 +213,14 @@ const CRM = () => {
       created_by: user.id,
       note: newActivityNote.trim(),
       activity_date: newActivityDate || new Date().toISOString(),
-      activity_type: 'note',
+      activity_type: newActivityType,
     } as any);
     if (error) { toast.error('Error al agregar actividad'); }
     else {
       toast.success('Actividad registrada');
       setNewActivityNote('');
       setNewActivityDate('');
+      setNewActivityType('note');
       setShowActivityForm(false);
       fetchActivities(selectedDeal.id);
     }
@@ -561,6 +565,21 @@ const CRM = () => {
 
                   {showActivityForm && (
                     <div className="bg-muted/50 rounded-xl p-3 mb-3 space-y-2">
+                      <div>
+                        <Label className="text-[10px] font-semibold text-muted-foreground">Tipo de actividad</Label>
+                        <Select value={newActivityType} onValueChange={setNewActivityType}>
+                          <SelectTrigger className="rounded-[10px] bg-background border-border text-xs h-8 mt-0.5">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="note">📝 Nota</SelectItem>
+                            <SelectItem value="call">📞 Llamada</SelectItem>
+                            <SelectItem value="meeting">👥 Reunión</SelectItem>
+                            <SelectItem value="email">📧 Email</SelectItem>
+                            <SelectItem value="followup">🔄 Seguimiento</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <Textarea
                         placeholder="Describe la actividad..."
                         value={newActivityNote}
@@ -596,6 +615,11 @@ const CRM = () => {
                     <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                       {activities.map(act => (
                         <div key={act.id} className="bg-muted/40 rounded-lg p-2.5 border border-border/50">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-medium">
+                              {act.activity_type === 'call' ? '📞 Llamada' : act.activity_type === 'meeting' ? '👥 Reunión' : act.activity_type === 'email' ? '📧 Email' : act.activity_type === 'followup' ? '🔄 Seguimiento' : '📝 Nota'}
+                            </Badge>
+                          </div>
                           <p className="text-sm text-body">{act.note}</p>
                           <div className="flex items-center gap-2 mt-1.5">
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
