@@ -428,6 +428,10 @@ const CRM = () => {
                   <span className="text-lg font-bold text-primary">€{Number(selectedDeal.deal_value).toLocaleString()}</span>
                 </div>
                 <div>
+                  <p className="label-style mb-1">Owner</p>
+                  <span className="text-sm text-body">{getProfileName(selectedDeal.assigned_to) || 'Sin asignar'}</span>
+                </div>
+                <div>
                   <p className="label-style mb-1">Etapa</p>
                   <span className="inline-flex items-center gap-2 text-sm font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: stageColors[selectedDeal.stage] + '20', color: stageColors[selectedDeal.stage] }}>
                     <span className="h-2 w-2 rounded-full" style={{ backgroundColor: stageColors[selectedDeal.stage] }} />
