@@ -142,10 +142,11 @@ const EmailCampaigns = () => {
 
     // Save steps
     if (emailSteps.length > 0) {
+      const firstSubject = emailSteps[0].subject;
       const stepsToInsert = emailSteps.map(s => ({
         campaign_id: data.id,
         step_number: s.step_number,
-        subject: s.subject,
+        subject: useThread && s.step_number > 1 ? `Re: ${firstSubject}` : s.subject,
         html_body: s.html_body || null,
         delay_days: s.delay_days,
         status: 'Pendiente',
