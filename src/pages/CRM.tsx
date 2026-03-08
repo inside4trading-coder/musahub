@@ -202,7 +202,28 @@ const CRM = () => {
     else { toast.success('Deal eliminado'); setSelectedDeal(null); setEditing(false); fetchDeals(); }
   };
 
-  const filteredDeals = deals.filter(d => {
+  const handleAddActivity = async () => {
+    if (!selectedDeal || !newActivityNote.trim() || !user) return;
+    setAddingActivity(true);
+    const { error } = await supabase.from('deal_activities').insert({
+      deal_id: selectedDeal.id,
+      created_by: user.id,
+      note: newActivityNote.trim(),
+      activity_date: newActivityDate || new Date().toISOString(),
+      activity_type: 'note',
+    } as any);
+    if (error) { toast.error('Error al agregar actividad'); }
+    else {
+      toast.success('Actividad registrada');
+      setNewActivityNote('');
+      setNewActivityDate('');
+      setShowActivityForm(false);
+      fetchActivities(selectedDeal.id);
+    }
+    setAddingActivity(false);
+  };
+
+
     const matchesSearch = d.company_name.toLowerCase().includes(search.toLowerCase()) ||
       d.contact_name.toLowerCase().includes(search.toLowerCase());
     const matchesOwner = !ownerFilter || d.assigned_to === ownerFilter;
