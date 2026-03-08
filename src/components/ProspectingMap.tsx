@@ -128,7 +128,7 @@ export const ProspectingMap = ({ businessType, city, onSearchResults, onSearchSt
     });
   }, [city, mapReady]);
 
-  // Search handler using Places API (New)
+  // Search handler using Places API (New) — subdivides bounds for more results
   const doSearch = useCallback(async () => {
     if (!mapReady || !mapInstance.current) return;
 
@@ -140,11 +140,11 @@ export const ProspectingMap = ({ businessType, city, onSearchResults, onSearchSt
     markersRef.current = [];
 
     const map = mapInstance.current;
-    const bounds = currentPolygon.current
+    const mainBounds = currentPolygon.current
       ? getPolygonBounds(currentPolygon.current)
       : map.getBounds();
 
-    if (!bounds) { setSearching(false); return; }
+    if (!mainBounds) { setSearching(false); return; }
 
     const polygonPath = currentPolygon.current?.getPath();
     const polygonData = polygonPath
@@ -152,68 +152,76 @@ export const ProspectingMap = ({ businessType, city, onSearchResults, onSearchSt
       : null;
 
     try {
-      // Use the new Places API (searchByText)
       const { Place } = await google.maps.importLibrary('places') as google.maps.PlacesLibrary;
-      const center = bounds.getCenter();
-      
-      const request = {
-        textQuery: businessType + ' ' + city,
-        fields: ['displayName', 'formattedAddress', 'location', 'rating', 'userRatingCount', 'nationalPhoneNumber', 'websiteURI'],
-        locationBias: bounds,
-        maxResultCount: 20,
-      };
 
-      // @ts-ignore - searchByText is part of the new Places API
-      const { places } = await Place.searchByText(request);
+      // Subdivide bounds into a 2x2 grid for broader coverage (up to 80 results)
+      const subBounds = subdivideBounds(mainBounds, 2);
+      const allResults: ProspectResult[] = [];
+      const seenIds = new Set<string>();
 
-      if (!places || places.length === 0) {
-        setSearching(false);
-        onSearchResults([]);
-        return;
+      for (const bounds of subBounds) {
+        try {
+          const request = {
+            textQuery: businessType,
+            fields: ['displayName', 'formattedAddress', 'location', 'rating', 'userRatingCount', 'nationalPhoneNumber', 'websiteURI', 'id'],
+            locationRestriction: bounds,
+            maxResultCount: 20,
+          };
+
+          // @ts-ignore
+          const { places } = await Place.searchByText(request);
+          if (!places) continue;
+
+          for (const place of places as any[]) {
+            const placeId = place.id;
+            if (seenIds.has(placeId)) continue;
+            seenIds.add(placeId);
+
+            // Filter by polygon if drawn
+            if (polygonPath && place.location) {
+              const inside = google.maps.geometry?.poly?.containsLocation(place.location, currentPolygon.current!);
+              if (!inside) continue;
+            }
+
+            const lat = place.location?.lat() ?? 0;
+            const lng = place.location?.lng() ?? 0;
+
+            const marker = new google.maps.Marker({
+              position: { lat, lng },
+              map,
+              title: place.displayName,
+              icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 7,
+                fillColor: '#84cc16',
+                fillOpacity: 0.9,
+                strokeColor: '#fff',
+                strokeWeight: 2,
+              },
+            });
+            markersRef.current.push(marker);
+
+            allResults.push({
+              business_name: place.displayName || 'Sin nombre',
+              address: place.formattedAddress || '',
+              phone: place.nationalPhoneNumber || null,
+              website: place.websiteURI || null,
+              rating: place.rating ?? null,
+              review_count: place.userRatingCount ?? null,
+              latitude: lat,
+              longitude: lng,
+              category: businessType,
+              city: city,
+              polygon_data: polygonData,
+            });
+          }
+        } catch (e) {
+          console.warn('Sub-search failed:', e);
+        }
       }
 
-      const mapped: ProspectResult[] = places
-        .filter((place: any) => {
-          if (!polygonPath || !place.location) return true;
-          return google.maps.geometry?.poly?.containsLocation(place.location, currentPolygon.current!);
-        })
-        .map((place: any) => {
-          const lat = place.location?.lat() ?? 0;
-          const lng = place.location?.lng() ?? 0;
-
-          // Add marker
-          const marker = new google.maps.Marker({
-            position: { lat, lng },
-            map,
-            title: place.displayName,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 7,
-              fillColor: '#84cc16',
-              fillOpacity: 0.9,
-              strokeColor: '#fff',
-              strokeWeight: 2,
-            },
-          });
-          markersRef.current.push(marker);
-
-          return {
-            business_name: place.displayName || 'Sin nombre',
-            address: place.formattedAddress || '',
-            phone: place.nationalPhoneNumber || null,
-            website: place.websiteURI || null,
-            rating: place.rating ?? null,
-            review_count: place.userRatingCount ?? null,
-            latitude: lat,
-            longitude: lng,
-            category: businessType,
-            city: city,
-            polygon_data: polygonData,
-          };
-        });
-
       setSearching(false);
-      onSearchResults(mapped);
+      onSearchResults(allResults);
     } catch (error) {
       console.error('Places search error:', error);
       setSearching(false);
@@ -258,4 +266,21 @@ function getPolygonBounds(polygon: google.maps.Polygon): google.maps.LatLngBound
   const bounds = new google.maps.LatLngBounds();
   polygon.getPath().forEach(point => bounds.extend(point));
   return bounds;
+}
+
+function subdivideBounds(bounds: google.maps.LatLngBounds, divisions: number): google.maps.LatLngBounds[] {
+  const ne = bounds.getNorthEast();
+  const sw = bounds.getSouthWest();
+  const latStep = (ne.lat() - sw.lat()) / divisions;
+  const lngStep = (ne.lng() - sw.lng()) / divisions;
+  const result: google.maps.LatLngBounds[] = [];
+
+  for (let i = 0; i < divisions; i++) {
+    for (let j = 0; j < divisions; j++) {
+      const subSw = new google.maps.LatLng(sw.lat() + i * latStep, sw.lng() + j * lngStep);
+      const subNe = new google.maps.LatLng(sw.lat() + (i + 1) * latStep, sw.lng() + (j + 1) * lngStep);
+      result.push(new google.maps.LatLngBounds(subSw, subNe));
+    }
+  }
+  return result;
 }
