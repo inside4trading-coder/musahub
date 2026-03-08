@@ -328,6 +328,11 @@ const CRM = () => {
                                   {(deal as any).tiktok && <span className="text-[10px]">🎵</span>}
                                   {(deal as any).website && <span className="text-[10px]">🌐</span>}
                                 </div>
+                                {deal.assigned_to && (
+                                  <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+                                    👤 {getProfileName(deal.assigned_to)}
+                                  </p>
+                                )}
                                 <div className="flex items-center justify-between mt-2">
                                   <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                                     €{Number(deal.deal_value).toLocaleString()}
