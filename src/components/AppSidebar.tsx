@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  LayoutDashboard, Briefcase, Map, Sparkles, Mail,
+  LayoutDashboard, Briefcase, Map, Mail,
   BookOpen, Settings, LogOut, ChevronLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
