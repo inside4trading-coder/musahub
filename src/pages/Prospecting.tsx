@@ -339,9 +339,20 @@ const Prospecting = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-heading lime-dot">Prospección</h1>
-        <p className="text-body text-sm mt-1">Encuentra y exporta prospectos por zona geográfica</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-heading lime-dot">Prospección</h1>
+          <p className="text-body text-sm mt-1">Encuentra y exporta prospectos por zona geográfica</p>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => { setUnlocked(false); sessionStorage.removeItem('prospecting_unlocked'); setPin(''); }}
+          className="rounded-xl h-9 w-9 text-muted-foreground hover:text-destructive"
+          title="Bloquear prospección"
+        >
+          <Lock className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-200px)]">
