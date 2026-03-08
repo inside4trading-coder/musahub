@@ -20,13 +20,6 @@ const businessTypes = [
 ];
 
 const Prospecting = () => {
-  const [searchCity, setSearchCity] = useState('Madrid');
-  const [searchType, setSearchType] = useState(businessTypes[0]);
-  const [searchTrigger, setSearchTrigger] = useState(0);
-  const [mapSearching, setMapSearching] = useState(false);
-  const [searchType, setSearchType] = useState(businessTypes[0]);
-  const [searchTrigger, setSearchTrigger] = useState(0);
-  const [mapSearching, setMapSearching] = useState(false);
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -34,6 +27,12 @@ const Prospecting = () => {
   const [filterPhone, setFilterPhone] = useState(false);
   const [filterWeb, setFilterWeb] = useState(false);
   const [addingToCrm, setAddingToCrm] = useState<string | null>(null);
+
+  // Map search state
+  const [searchCity, setSearchCity] = useState('Madrid');
+  const [searchType, setSearchType] = useState(businessTypes[0]);
+  const [searchTrigger, setSearchTrigger] = useState(0);
+  const [mapSearching, setMapSearching] = useState(false);
 
   const fetchProspects = useCallback(async () => {
     const { data, error } = await supabase
@@ -132,6 +131,43 @@ const Prospecting = () => {
     toast.success('Archivo exportado');
   };
 
+  const handleMapResults = async (results: Array<{
+    business_name: string; address: string; phone: string | null;
+    website: string | null; rating: number | null; review_count: number | null;
+    latitude: number; longitude: number; category: string; city: string;
+    polygon_data: object | null;
+  }>) => {
+    if (results.length === 0) {
+      toast.info('No se encontraron negocios en esta zona');
+      setMapSearching(false);
+      return;
+    }
+
+    const inserts = results.map(r => ({
+      business_name: r.business_name,
+      address: r.address,
+      phone: r.phone,
+      website: r.website,
+      rating: r.rating,
+      review_count: r.review_count,
+      latitude: r.latitude,
+      longitude: r.longitude,
+      category: r.category,
+      city: r.city,
+      search_query: r.category,
+      polygon_data: r.polygon_data,
+    }));
+
+    const { error } = await supabase.from('prospects').insert(inserts);
+    if (error) {
+      toast.error('Error al guardar prospectos');
+    } else {
+      toast.success(`${results.length} negocios encontrados y guardados`);
+      fetchProspects();
+    }
+    setMapSearching(false);
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
@@ -149,30 +185,45 @@ const Prospecting = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-200px)]">
-        {/* Map placeholder */}
+        {/* Map */}
         <div className="lg:col-span-3 rounded-2xl bg-card border border-border shadow-card overflow-hidden relative">
-          <div className="absolute inset-0 flex items-center justify-center gradient-hero">
-            <div className="text-center">
-              <Map className="h-16 w-16 text-primary/30 mx-auto mb-4" />
-              <p className="text-heading font-semibold">Google Maps</p>
-              <p className="text-sm text-muted-foreground mt-1">Configura tu API key de Google Maps para activar el mapa interactivo</p>
-              <p className="text-xs text-muted-foreground mt-3">VITE_GOOGLE_MAPS_API_KEY</p>
-            </div>
-          </div>
+          <ProspectingMap
+            businessType={searchType}
+            city={searchCity}
+            onSearchResults={handleMapResults}
+            onSearchStart={() => setMapSearching(true)}
+            triggerSearch={searchTrigger}
+          />
           <div className="absolute top-4 right-4 bg-card rounded-xl border border-border p-4 shadow-card w-64 z-10">
             <div className="space-y-3">
               <div>
                 <Label className="text-xs font-semibold text-heading">Tipo de negocio</Label>
-                <select className="w-full h-9 rounded-[10px] bg-muted border border-border px-3 text-sm mt-1">
+                <select
+                  value={searchType}
+                  onChange={e => setSearchType(e.target.value)}
+                  className="w-full h-9 rounded-[10px] bg-muted border border-border px-3 text-sm mt-1"
+                >
                   {businessTypes.map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div>
                 <Label className="text-xs font-semibold text-heading">Ciudad</Label>
-                <Input placeholder="Madrid" className="rounded-[10px] bg-muted border-border mt-1 h-9 text-sm" />
+                <Input
+                  value={searchCity}
+                  onChange={e => setSearchCity(e.target.value)}
+                  placeholder="Madrid"
+                  className="rounded-[10px] bg-muted border-border mt-1 h-9 text-sm"
+                />
               </div>
-              <Button className="w-full rounded-xl bg-primary text-primary-foreground font-semibold h-9 text-sm" disabled>
-                <Search className="h-3.5 w-3.5 mr-2" /> Buscar en Zona
+              <Button
+                className="w-full rounded-xl bg-primary text-primary-foreground font-semibold h-9 text-sm"
+                disabled={mapSearching || !searchCity.trim()}
+                onClick={() => setSearchTrigger(prev => prev + 1)}
+              >
+                {mapSearching
+                  ? <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> Buscando…</>
+                  : <><Search className="h-3.5 w-3.5 mr-2" /> Buscar en Zona</>
+                }
               </Button>
             </div>
           </div>
@@ -189,7 +240,6 @@ const Prospecting = () => {
             </div>
           </div>
 
-          {/* Bulk actions */}
           {selected.size > 0 && (
             <div className="px-5 py-2 bg-primary/5 border-b border-border flex items-center gap-2">
               <span className="text-xs font-semibold text-primary">{selected.size} seleccionados</span>
@@ -207,6 +257,7 @@ const Prospecting = () => {
               <div className="text-center py-12">
                 <Search className="h-10 w-10 text-primary/20 mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">No hay prospectos aún</p>
+                <p className="text-xs text-muted-foreground mt-1">Dibuja un polígono en el mapa y busca</p>
               </div>
             ) : (
               <>
