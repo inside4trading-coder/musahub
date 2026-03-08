@@ -87,7 +87,7 @@ const Dashboard = () => {
   const quickActions = [
     { label: 'Nuevo Deal', icon: Briefcase, path: '/crm', color: 'bg-primary/10 text-primary' },
     { label: 'Nueva Campaña', icon: Mail, path: '/email-campaigns', color: 'bg-secondary/10 text-secondary' },
-    { label: 'Nuevo Artículo', icon: FileText, path: '/knowledge', color: 'bg-warning/10 text-warning' },
+    { label: 'Nuevo Artículo', icon: BookOpen, path: '/knowledge', color: 'bg-warning/10 text-warning' },
   ];
 
   if (loading) {
