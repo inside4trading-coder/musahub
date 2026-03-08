@@ -81,7 +81,7 @@ const Dashboard = () => {
     { label: 'Deals en Pipeline', value: String(kpis.dealCount), icon: Briefcase },
     { label: 'Valor Pipeline', value: `€${kpis.pipelineValue.toLocaleString()}`, icon: Euro },
     { label: 'Prospectos este mes', value: String(kpis.prospectsThisMonth), icon: Users },
-    { label: 'Propuestas generadas', value: String(kpis.copiesThisMonth), icon: FileText },
+    
     { label: 'Campañas este mes', value: String(kpis.campaignsThisMonth), icon: Mail },
   ] : [];
 
