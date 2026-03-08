@@ -17,10 +17,15 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Validate auth via Authorization header OR body service_role_key
+    const authHeader = req.headers.get("Authorization");
+    const bearerToken = authHeader?.replace("Bearer ", "");
+    
     const body = await req.json();
-
-    // Validate required auth from n8n (service role key passed in payload)
-    if (body.service_role_key !== SUPABASE_SERVICE_ROLE_KEY) {
+    
+    const providedKey = bearerToken || body.service_role_key;
+    if (providedKey !== SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("Auth failed. Provided key prefix:", providedKey?.substring(0, 20));
       throw new Error("Unauthorized callback");
     }
 
