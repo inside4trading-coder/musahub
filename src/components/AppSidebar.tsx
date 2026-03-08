@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import musaLogoText from '@/assets/musa-logo-text.png';
+import musaLogoIcon from '@/assets/musa-logo-icon.png';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -32,17 +34,13 @@ export const AppSidebar = () => {
       {/* Logo */}
       <div className="flex items-center justify-between px-5 py-5 border-b border-border">
         {!collapsed && (
-          <div>
-            <h1 className="text-xl font-extrabold" style={{ letterSpacing: '-0.03em' }}>
-              <span className="text-heading">musa</span>
-              <span className="text-primary"> hub</span>
-              <span className="text-primary ml-0.5 text-sm">●</span>
-            </h1>
-            <p className="label-style text-[10px] mt-0.5">Agency Portal</p>
+          <div className="flex items-center gap-2">
+            <img src={musaLogoIcon} alt="Musa" className="h-7 w-7 object-contain" />
+            <img src={musaLogoText} alt="Musa Hub" className="h-5 object-contain" />
           </div>
         )}
         {collapsed && (
-          <span className="text-primary font-extrabold text-xl mx-auto">m</span>
+          <img src={musaLogoIcon} alt="Musa" className="h-7 w-7 object-contain mx-auto" />
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
