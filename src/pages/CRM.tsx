@@ -118,6 +118,7 @@ const CRM = () => {
       notes: newDeal.notes || null,
       tags: newDeal.tags,
       created_by: user.id,
+      assigned_to: newDeal.assigned_to || null,
     };
     const { error } = await supabase.from('deals').insert(insert);
     if (error) { toast.error('Error al crear deal'); }
