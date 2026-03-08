@@ -217,14 +217,18 @@ export type Database = {
           city: string | null
           created_at: string
           email: string | null
+          facebook: string | null
           id: string
+          instagram: string | null
           latitude: number | null
+          linkedin: string | null
           longitude: number | null
           phone: string | null
           polygon_data: Json | null
           rating: number | null
           review_count: number | null
           search_query: string | null
+          tiktok: string | null
           website: string | null
           whatsapp: string | null
         }
@@ -236,14 +240,18 @@ export type Database = {
           city?: string | null
           created_at?: string
           email?: string | null
+          facebook?: string | null
           id?: string
+          instagram?: string | null
           latitude?: number | null
+          linkedin?: string | null
           longitude?: number | null
           phone?: string | null
           polygon_data?: Json | null
           rating?: number | null
           review_count?: number | null
           search_query?: string | null
+          tiktok?: string | null
           website?: string | null
           whatsapp?: string | null
         }
@@ -255,14 +263,18 @@ export type Database = {
           city?: string | null
           created_at?: string
           email?: string | null
+          facebook?: string | null
           id?: string
+          instagram?: string | null
           latitude?: number | null
+          linkedin?: string | null
           longitude?: number | null
           phone?: string | null
           polygon_data?: Json | null
           rating?: number | null
           review_count?: number | null
           search_query?: string | null
+          tiktok?: string | null
           website?: string | null
           whatsapp?: string | null
         }

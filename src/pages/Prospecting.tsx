@@ -64,13 +64,17 @@ const Prospecting = () => {
           continue;
         }
 
-        const updates = Object.entries(scrapeData.results as Record<string, { email: string | null; whatsapp: string | null }>);
+      const updates = Object.entries(scrapeData.results as Record<string, { email: string | null; whatsapp: string | null; instagram: string | null; facebook: string | null; linkedin: string | null; tiktok: string | null }>);
         for (const [id, contact] of updates) {
-          if (contact.email || contact.whatsapp) {
+          if (contact.email || contact.whatsapp || contact.instagram || contact.facebook || contact.linkedin || contact.tiktok) {
             totalFound++;
             await supabase.from('prospects').update({
               email: contact.email,
               whatsapp: contact.whatsapp,
+              instagram: contact.instagram,
+              facebook: contact.facebook,
+              linkedin: contact.linkedin,
+              tiktok: contact.tiktok,
             }).eq('id', id);
           }
         }
@@ -175,6 +179,10 @@ const Prospecting = () => {
       'Teléfono': p.phone || '',
       'WhatsApp': (p as any).whatsapp || '',
       'Email': (p as any).email || '',
+      'Instagram': (p as any).instagram || '',
+      'Facebook': (p as any).facebook || '',
+      'LinkedIn': (p as any).linkedin || '',
+      'TikTok': (p as any).tiktok || '',
       'Rating': p.rating ?? '',
       'Reviews': p.review_count ?? '',
       'Web': p.website || '',
@@ -263,14 +271,18 @@ const Prospecting = () => {
         }
 
         // Update each prospect with scraped data
-        const updates = Object.entries(scrapeData.results as Record<string, { email: string | null; whatsapp: string | null }>);
+        const updates = Object.entries(scrapeData.results as Record<string, { email: string | null; whatsapp: string | null; instagram: string | null; facebook: string | null; linkedin: string | null; tiktok: string | null }>);
         let found = 0;
         for (const [id, contact] of updates) {
-          if (contact.email || contact.whatsapp) {
+          if (contact.email || contact.whatsapp || contact.instagram || contact.facebook || contact.linkedin || contact.tiktok) {
             found++;
             await supabase.from('prospects').update({
               email: contact.email,
               whatsapp: contact.whatsapp,
+              instagram: contact.instagram,
+              facebook: contact.facebook,
+              linkedin: contact.linkedin,
+              tiktok: contact.tiktok,
             }).eq('id', id);
           }
         }
@@ -404,6 +416,12 @@ const Prospecting = () => {
                             {r.phone && <p className="text-xs text-body mt-1">📞 {r.phone}</p>}
                             {(r as any).email && <p className="text-xs text-body">✉️ {(r as any).email}</p>}
                             {(r as any).whatsapp && <p className="text-xs text-body">💬 {(r as any).whatsapp}</p>}
+                            <div className="flex flex-wrap gap-2 mt-0.5">
+                              {(r as any).instagram && <a href={(r as any).instagram} target="_blank" rel="noopener noreferrer" className="text-xs text-pink-500 hover:underline">📷 IG</a>}
+                              {(r as any).facebook && <a href={(r as any).facebook} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">📘 FB</a>}
+                              {(r as any).linkedin && <a href={(r as any).linkedin} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 hover:underline">💼 LI</a>}
+                              {(r as any).tiktok && <a href={(r as any).tiktok} target="_blank" rel="noopener noreferrer" className="text-xs text-foreground hover:underline">🎵 TK</a>}
+                            </div>
                           </div>
                           <div className="text-right shrink-0">
                             {r.rating !== null && <span className="text-sm font-bold text-warning">⭐ {Number(r.rating).toFixed(1)}</span>}
