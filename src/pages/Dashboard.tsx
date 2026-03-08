@@ -41,13 +41,14 @@ const Dashboard = () => {
       const deals = dealsRes.data || [];
       const activeDealStages = ['Lead', 'Contactado', 'Propuesta Enviada', 'Negociación'];
       const activeDeals = deals.filter(d => activeDealStages.includes(d.stage));
+      const wonDeals = deals.filter(d => d.stage === 'Cerrado Ganado');
 
       setKpis({
         dealCount: activeDeals.length,
         pipelineValue: activeDeals.reduce((s, d) => s + Number(d.deal_value), 0),
         prospectsThisMonth: (prospectsRes.data || []).length,
-        
         campaignsThisMonth: (campaignsRes.data || []).length,
+        wonDealsValue: wonDeals.reduce((s, d) => s + Number(d.deal_value), 0),
       });
 
       // Build recent activity from all sources
