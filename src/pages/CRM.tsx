@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 
 type Deal = Tables<'deals'>;
+type Profile = { id: string; full_name: string | null };
 
 const stageColors: Record<string, string> = {
   'Lead': '#9BA3B2',
@@ -31,6 +32,7 @@ const stages = Object.keys(stageColors);
 const emptyDeal = {
   company_name: '', contact_name: '', email: '', phone: '',
   deal_value: 0, stage: 'Lead', notes: '', tags: [] as string[],
+  assigned_to: '' as string,
 };
 
 const CRM = () => {
@@ -44,6 +46,7 @@ const CRM = () => {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Deal>>({});
+  const [profiles, setProfiles] = useState<Profile[]>([]);
 
   // Mouse drag-to-scroll for kanban
   const kanbanRef = useRef<HTMLDivElement>(null);
@@ -65,6 +68,11 @@ const CRM = () => {
   };
   const handleMouseUp = () => { isDraggingScroll.current = false; };
 
+  const fetchProfiles = useCallback(async () => {
+    const { data } = await supabase.from('profiles').select('id, full_name');
+    if (data) setProfiles(data);
+  }, []);
+
   const fetchDeals = useCallback(async () => {
     const { data, error } = await supabase
       .from('deals')
@@ -80,7 +88,13 @@ const CRM = () => {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchDeals(); }, [fetchDeals]);
+  useEffect(() => { fetchDeals(); fetchProfiles(); }, [fetchDeals, fetchProfiles]);
+
+  const getProfileName = (userId: string | null) => {
+    if (!userId) return null;
+    const p = profiles.find(pr => pr.id === userId);
+    return p?.full_name || 'Sin nombre';
+  };
 
   const onDragEnd = useCallback(async (result: DropResult) => {
     if (!result.destination) return;
@@ -104,6 +118,7 @@ const CRM = () => {
       notes: newDeal.notes || null,
       tags: newDeal.tags,
       created_by: user.id,
+      assigned_to: newDeal.assigned_to || null,
     };
     const { error } = await supabase.from('deals').insert(insert);
     if (error) { toast.error('Error al crear deal'); }
@@ -127,6 +142,7 @@ const CRM = () => {
       linkedin: (selectedDeal as any).linkedin,
       tiktok: (selectedDeal as any).tiktok,
       whatsapp: (selectedDeal as any).whatsapp,
+      assigned_to: selectedDeal.assigned_to,
     });
     setEditing(true);
   };
@@ -209,6 +225,13 @@ const CRM = () => {
                     {stages.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-heading">Owner</Label>
+                <select value={newDeal.assigned_to} onChange={e => setNewDeal(p => ({ ...p, assigned_to: e.target.value }))} className="w-full h-10 rounded-[10px] bg-muted border border-border px-3 text-sm mt-1">
+                  <option value="">Sin asignar</option>
+                  {profiles.map(p => <option key={p.id} value={p.id}>{p.full_name || 'Sin nombre'}</option>)}
+                </select>
               </div>
               <div>
                 <Label className="text-xs font-semibold text-heading">Notas</Label>
@@ -305,6 +328,11 @@ const CRM = () => {
                                   {(deal as any).tiktok && <span className="text-[10px]">🎵</span>}
                                   {(deal as any).website && <span className="text-[10px]">🌐</span>}
                                 </div>
+                                {deal.assigned_to && (
+                                  <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+                                    👤 {getProfileName(deal.assigned_to)}
+                                  </p>
+                                )}
                                 <div className="flex items-center justify-between mt-2">
                                   <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                                     €{Number(deal.deal_value).toLocaleString()}
@@ -398,6 +426,10 @@ const CRM = () => {
                 <div className="flex items-center gap-2 text-sm">
                   <Euro className="h-4 w-4 text-muted-foreground" />
                   <span className="text-lg font-bold text-primary">€{Number(selectedDeal.deal_value).toLocaleString()}</span>
+                </div>
+                <div>
+                  <p className="label-style mb-1">Owner</p>
+                  <span className="text-sm text-body">{getProfileName(selectedDeal.assigned_to) || 'Sin asignar'}</span>
                 </div>
                 <div>
                   <p className="label-style mb-1">Etapa</p>
@@ -498,6 +530,13 @@ const CRM = () => {
                       {stages.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-heading">Owner</Label>
+                  <select value={editForm.assigned_to || ''} onChange={e => setEditForm(p => ({ ...p, assigned_to: e.target.value || null }))} className="w-full h-10 rounded-[10px] bg-muted border border-border px-3 text-sm mt-1">
+                    <option value="">Sin asignar</option>
+                    {profiles.map(p => <option key={p.id} value={p.id}>{p.full_name || 'Sin nombre'}</option>)}
+                  </select>
                 </div>
                 <p className="label-style pt-2">Redes Sociales</p>
                 <div className="grid grid-cols-2 gap-3">
