@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      deal_activities: {
+        Row: {
+          activity_date: string
+          activity_type: string
+          created_at: string
+          created_by: string | null
+          deal_id: string
+          id: string
+          note: string
+        }
+        Insert: {
+          activity_date?: string
+          activity_type?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id: string
+          id?: string
+          note: string
+        }
+        Update: {
+          activity_date?: string
+          activity_type?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string
+          id?: string
+          note?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_activities_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           assigned_to: string | null
