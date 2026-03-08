@@ -131,7 +131,5 @@ const SettingsPage = () => {
   );
 };
 
-// need cn import
-import { cn } from '@/lib/utils';
 
 export default SettingsPage;
