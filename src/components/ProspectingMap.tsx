@@ -155,7 +155,7 @@ export const ProspectingMap = ({ businessType, city, onSearchResults, onSearchSt
       const { Place } = await google.maps.importLibrary('places') as google.maps.PlacesLibrary;
 
       // Subdivide bounds into a 2x2 grid for broader coverage (up to 80 results)
-      const subBounds = subdivideBounds(mainBounds, 2);
+      const subBounds = subdivideBounds(mainBounds, 3);
       const allResults: ProspectResult[] = [];
       const seenIds = new Set<string>();
 
