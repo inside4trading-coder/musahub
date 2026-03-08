@@ -314,7 +314,9 @@ const Prospecting = () => {
                           <div>
                             <p className="text-sm font-bold text-heading">{r.business_name}</p>
                             <p className="text-xs text-muted-foreground">{r.category || '—'} · {r.address || r.city || '—'}</p>
-                            {r.phone && <p className="text-xs text-body mt-1">{r.phone}</p>}
+                            {r.phone && <p className="text-xs text-body mt-1">📞 {r.phone}</p>}
+                            {(r as any).email && <p className="text-xs text-body">✉️ {(r as any).email}</p>}
+                            {(r as any).whatsapp && <p className="text-xs text-body">💬 {(r as any).whatsapp}</p>}
                           </div>
                           <div className="text-right shrink-0">
                             {r.rating !== null && <span className="text-sm font-bold text-warning">⭐ {Number(r.rating).toFixed(1)}</span>}
