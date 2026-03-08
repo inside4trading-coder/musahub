@@ -565,6 +565,21 @@ const CRM = () => {
 
                   {showActivityForm && (
                     <div className="bg-muted/50 rounded-xl p-3 mb-3 space-y-2">
+                      <div>
+                        <Label className="text-[10px] font-semibold text-muted-foreground">Tipo de actividad</Label>
+                        <Select value={newActivityType} onValueChange={setNewActivityType}>
+                          <SelectTrigger className="rounded-[10px] bg-background border-border text-xs h-8 mt-0.5">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="note">📝 Nota</SelectItem>
+                            <SelectItem value="call">📞 Llamada</SelectItem>
+                            <SelectItem value="meeting">👥 Reunión</SelectItem>
+                            <SelectItem value="email">📧 Email</SelectItem>
+                            <SelectItem value="followup">🔄 Seguimiento</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <Textarea
                         placeholder="Describe la actividad..."
                         value={newActivityNote}
