@@ -196,10 +196,11 @@ const EmailCampaigns = () => {
 
     // 2. Save all steps with scheduled dates
     const now = new Date();
+    const firstSubject = emailSteps[0].subject;
     const stepsToInsert = emailSteps.map(s => ({
       campaign_id: data.id,
       step_number: s.step_number,
-      subject: s.subject,
+      subject: useThread && s.step_number > 1 ? `Re: ${firstSubject}` : s.subject,
       html_body: s.html_body || null,
       delay_days: s.delay_days,
       scheduled_for: addDays(now, s.delay_days).toISOString(),
