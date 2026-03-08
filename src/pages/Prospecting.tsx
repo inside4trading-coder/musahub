@@ -19,7 +19,10 @@ const businessTypes = [
   'Farmacias', 'Dentistas', 'Bares',
 ];
 
-const Prospecting = () => {
+  const [searchCity, setSearchCity] = useState('Madrid');
+  const [searchType, setSearchType] = useState(businessTypes[0]);
+  const [searchTrigger, setSearchTrigger] = useState(0);
+  const [mapSearching, setMapSearching] = useState(false);
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
