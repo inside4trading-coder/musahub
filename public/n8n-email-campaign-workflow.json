@@ -1,0 +1,249 @@
+{
+  "name": "Musa - Email Campaign Sender",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email-campaign",
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "email-campaign"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract campaign data from webhook\nconst input = $input.first().json;\n\nconst campaignId = input.campaign_id;\nconst subject = input.subject;\nconst fromName = input.from_name || 'Musa Agency';\nconst replyTo = input.reply_to || '';\nconst htmlBody = input.html_body || '';\nconst recipients = input.recipients || [];\nconst callbackUrl = input.callback_url;\nconst serviceRoleKey = input.service_role_key;\n\n// Create one item per recipient with all campaign data\nconst items = recipients.map((recipient, index) => {\n  // Replace template variables in subject and body\n  let personalizedSubject = subject;\n  let personalizedBody = htmlBody;\n  \n  // Replace all known variables\n  const vars = {\n    '{{email}}': recipient.email || '',\n    '{{business_name}}': recipient.business_name || '',\n    '{{contact_name}}': recipient.contact_name || '',\n    '{{city}}': recipient.city || '',\n    '{{company}}': recipient.business_name || '',\n    '{{phone}}': recipient.phone || '',\n  };\n  \n  for (const [key, value] of Object.entries(vars)) {\n    personalizedSubject = personalizedSubject.split(key).join(value);\n    personalizedBody = personalizedBody.split(key).join(value);\n  }\n  \n  return {\n    json: {\n      campaign_id: campaignId,\n      recipient_email: recipient.email,\n      business_name: recipient.business_name || null,\n      subject: personalizedSubject,\n      from_name: fromName,\n      reply_to: replyTo,\n      html_body: personalizedBody,\n      callback_url: callbackUrl,\n      service_role_key: serviceRoleKey,\n      recipient_index: index,\n      total_recipients: recipients.length,\n    }\n  };\n});\n\nreturn items;"
+      },
+      "id": "prepare-recipients",
+      "name": "Prepare Recipients",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 5,
+        "options": {
+          "reset": false
+        }
+      },
+      "id": "split-batches",
+      "name": "Rate Limiter (5 per batch)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "value": 1500
+      },
+      "id": "wait-between-batches",
+      "name": "Wait 1.5s Between Batches",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [720, 520],
+      "webhookId": "wait-batches"
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $json.reply_to || 'noreply@tudominio.com' }}",
+        "toEmail": "={{ $json.recipient_email }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "html": "={{ $json.html_body }}",
+        "options": {
+          "replyTo": "={{ $json.reply_to }}",
+          "senderName": "={{ $json.from_name }}"
+        }
+      },
+      "id": "send-email",
+      "name": "Send Email (SMTP)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [960, 300],
+      "credentials": {
+        "smtp": {
+          "id": "REPLACE_WITH_YOUR_SMTP_CREDENTIAL_ID",
+          "name": "SMTP Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Email sent successfully\nconst item = $input.first().json;\nreturn [{\n  json: {\n    campaign_id: item.campaign_id,\n    recipient_email: item.recipient_email,\n    status: 'sent',\n    error_message: null,\n    callback_url: item.callback_url,\n    service_role_key: item.service_role_key,\n  }\n}];"
+      },
+      "id": "mark-success",
+      "name": "Mark Success",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 240]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Email failed\nconst item = $input.first().json;\nconst errorMsg = $input.first().error?.message || 'Unknown send error';\nreturn [{\n  json: {\n    campaign_id: item.campaign_id,\n    recipient_email: item.recipient_email,\n    status: 'failed',\n    error_message: errorMsg,\n    callback_url: item.callback_url,\n    service_role_key: item.service_role_key,\n  }\n}];"
+      },
+      "id": "mark-failed",
+      "name": "Mark Failed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.callback_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.service_role_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"campaign_id\": \"{{ $json.campaign_id }}\",\n  \"recipient_email\": \"{{ $json.recipient_email }}\",\n  \"status\": \"{{ $json.status }}\",\n  \"error_message\": {{ $json.error_message ? '\"' + $json.error_message + '\"' : 'null' }}\n}",
+        "options": {
+          "timeout": 10000,
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "callback-supabase",
+      "name": "Callback to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1440, 300]
+    },
+    {
+      "parameters": {},
+      "id": "no-op-end",
+      "name": "Done",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1680, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Recipients": {
+      "main": [
+        [
+          {
+            "node": "Rate Limiter (5 per batch)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rate Limiter (5 per batch)": {
+      "main": [
+        [
+          {
+            "node": "Send Email (SMTP)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email (SMTP)": {
+      "main": [
+        [
+          {
+            "node": "Mark Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Success": {
+      "main": [
+        [
+          {
+            "node": "Callback to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Failed": {
+      "main": [
+        [
+          {
+            "node": "Callback to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Callback to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Wait 1.5s Between Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1.5s Between Batches": {
+      "main": [
+        [
+          {
+            "node": "Rate Limiter (5 per batch)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "email-campaigns",
+      "id": "email-campaigns"
+    }
+  ],
+  "triggerCount": 1,
+  "pinData": {}
+}
