@@ -381,6 +381,21 @@ const EmailCampaigns = () => {
                   </Button>
                 </div>
 
+                {/* Thread toggle */}
+                {emailSteps.length > 1 && (
+                  <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
+                    <Switch checked={useThread} onCheckedChange={setUseThread} id="use-thread" />
+                    <div className="flex-1">
+                      <Label htmlFor="use-thread" className="text-xs font-semibold text-heading flex items-center gap-1.5 cursor-pointer">
+                        <Link className="h-3.5 w-3.5 text-primary" /> Enviar como hilo de correos
+                      </Label>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Todos los pasos usarán "Re: {emailSteps[0]?.subject || '(asunto del paso 1)'}" para que lleguen en el mismo hilo
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {activeEmailStep && (
                   <div className="rounded-xl border border-border bg-background p-4 space-y-3">
                     <div className="flex items-center justify-between">
