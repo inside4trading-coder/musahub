@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import musaLogo from '@/assets/musa-logo.png';
+
 
 const Login = () => {
   const { user, signIn } = useAuth();
