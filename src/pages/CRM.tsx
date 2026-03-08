@@ -248,12 +248,22 @@ const CRM = () => {
         </Dialog>
       </div>
 
-      {/* Search */}
-      <div className="mb-4 max-w-sm">
-        <div className="relative">
+      {/* Search & Filters */}
+      <div className="mb-4 flex gap-3 items-center flex-wrap">
+        <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Buscar por empresa o contacto..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 rounded-[10px] bg-muted border-border" />
         </div>
+        <select
+          value={ownerFilter}
+          onChange={e => setOwnerFilter(e.target.value)}
+          className="h-10 rounded-[10px] bg-muted border border-border px-3 text-sm text-heading focus:border-primary focus:outline-none"
+        >
+          <option value="">Todos los owners</option>
+          {profiles.map(p => (
+            <option key={p.id} value={p.id}>{p.full_name || 'Sin nombre'}</option>
+          ))}
+        </select>
       </div>
 
       {/* Kanban with scroll navigation */}
