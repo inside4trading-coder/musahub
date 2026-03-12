@@ -39,7 +39,7 @@ const Dashboard = () => {
       ]);
 
       const deals = dealsRes.data || [];
-      const activeDealStages = ['Lead', 'Contactado', 'Propuesta Enviada', 'Negociación'];
+      const activeDealStages = ['Lead', 'Contactado', 'Reunión Agendada', 'Propuesta Enviada', 'Negociación'];
       const activeDeals = deals.filter(d => activeDealStages.includes(d.stage));
       const wonDeals = deals.filter(d => d.stage === 'Cerrado Ganado');
 
