@@ -108,7 +108,7 @@ serve(async (req) => {
     const sortedKeys = Object.keys(params).sort();
     const paramString = sortedKeys.map((k) => `${k}=${params[k]}`).join("&");
 
-    const md5Hash = await md5Hex(paramString);
+    const md5Hash = md5Hex(paramString);
     const signString = endpoint + paramString + md5Hash;
     const signature = await hmacSha1(ZADARMA_SECRET, signString);
 
