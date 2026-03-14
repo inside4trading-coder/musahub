@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      calls: {
+        Row: {
+          agent_name: string | null
+          call_id: string
+          caller: string | null
+          cost: number | null
+          created_at: string | null
+          destination: string | null
+          direction: string | null
+          duration: number | null
+          id: string
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          agent_name?: string | null
+          call_id: string
+          caller?: string | null
+          cost?: number | null
+          created_at?: string | null
+          destination?: string | null
+          direction?: string | null
+          duration?: number | null
+          id?: string
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          agent_name?: string | null
+          call_id?: string
+          caller?: string | null
+          cost?: number | null
+          created_at?: string | null
+          destination?: string | null
+          direction?: string | null
+          duration?: number | null
+          id?: string
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       campaign_steps: {
         Row: {
           campaign_id: string
@@ -445,7 +487,46 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      calls_agent_stats: {
+        Row: {
+          agent: string | null
+          answer_rate: number | null
+          answered: number | null
+          avg_duration_seconds: number | null
+          missed: number | null
+          total_calls: number | null
+          total_cost: number | null
+          total_minutes: number | null
+          valid_call_rate: number | null
+          valid_calls: number | null
+        }
+        Relationships: []
+      }
+      calls_daily_stats: {
+        Row: {
+          answer_rate: number | null
+          answered: number | null
+          avg_duration_seconds: number | null
+          day: string | null
+          missed: number | null
+          total_calls: number | null
+          total_cost: number | null
+          total_minutes: number | null
+          valid_call_rate: number | null
+          valid_calls: number | null
+        }
+        Relationships: []
+      }
+      calls_hourly_stats: {
+        Row: {
+          answered: number | null
+          avg_duration_seconds: number | null
+          hour: number | null
+          total_calls: number | null
+          valid_calls: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
