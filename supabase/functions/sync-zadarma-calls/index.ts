@@ -97,22 +97,17 @@ serve(async (req) => {
     }
 
     const rows = stats.map((s: any) => {
-      let direction = "unknown";
-      if (s.type === "in" || s.type === "incoming") direction = "incoming";
-      else if (s.type === "out" || s.type === "outgoing") direction = "outgoing";
-      else if (s.type === "internal") direction = "internal";
-      else direction = s.type || "unknown";
-
+      // Zadarma fields: id, sip, callstart, from, to, billseconds, billcost, cost, disposition, description, currency, hangupcause
       return {
-        call_id: String(s.callid || s.id),
-        caller: s.caller_id || s.from || null,
-        destination: s.destination || s.to || null,
-        duration: Number(s.seconds) || 0,
+        call_id: String(s.id || s.callid),
+        caller: s.from ? String(s.from) : null,
+        destination: s.to ? String(s.to) : null,
+        duration: Number(s.billseconds) || 0,
         status: s.disposition || "unknown",
-        direction,
+        direction: s.clid ? "outgoing" : "incoming", // heuristic; refine if needed
         started_at: s.callstart || null,
         cost: Number(s.cost) || 0,
-        agent_name: s.internal || null,
+        agent_name: s.sip || null,
       };
     });
 
