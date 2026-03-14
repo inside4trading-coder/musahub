@@ -85,6 +85,11 @@ serve(async (req) => {
     }
 
     const stats = data.stats || [];
+    // Log first record to debug field names
+    if (stats.length > 0) {
+      console.log("Sample record keys:", Object.keys(stats[0]));
+      console.log("Sample record:", JSON.stringify(stats[0]));
+    }
     if (stats.length === 0) {
       return new Response(JSON.stringify({ synced: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
