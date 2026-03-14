@@ -12,6 +12,7 @@ const navItems = [
   { label: 'CRM', icon: Briefcase, path: '/crm' },
   { label: 'Prospección', icon: Map, path: '/prospecting' },
   { label: 'Email Campaigns', icon: Mail, path: '/email-campaigns' },
+  { label: 'Llamadas', icon: Phone, path: '/calls' },
   { label: 'Knowledge Base', icon: BookOpen, path: '/knowledge' },
   { label: 'Configuración', icon: Settings, path: '/settings' },
 ];

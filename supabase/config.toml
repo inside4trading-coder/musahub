@@ -2,3 +2,6 @@ project_id = "ypvztymmshciokttiikm"
 
 [functions.process-scheduled-steps]
 verify_jwt = false
+
+[functions.sync-zadarma-calls]
+verify_jwt = false
