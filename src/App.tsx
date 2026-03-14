@@ -11,7 +11,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import CRM from "./pages/CRM";
 import Prospecting from "./pages/Prospecting";
-
+import Calls from "./pages/Calls";
 import EmailCampaigns from "./pages/EmailCampaigns";
 import Knowledge from "./pages/Knowledge";
 import SettingsPage from "./pages/Settings";
@@ -41,6 +41,7 @@ const App = () => (
               <Route path="/prospecting" element={<Prospecting />} />
               
               <Route path="/email-campaigns" element={<EmailCampaigns />} />
+              <Route path="/calls" element={<Calls />} />
               <Route path="/knowledge" element={<Knowledge />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
