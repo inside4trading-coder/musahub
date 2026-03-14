@@ -116,9 +116,7 @@ serve(async (req) => {
 
     if (error) throw new Error(`Database upsert error: ${error.message}`);
 
-    // Include sample for debugging
-    const sample = stats.length > 0 ? stats[0] : null;
-    return new Response(JSON.stringify({ synced: rows.length, sample_keys: sample ? Object.keys(sample) : [], sample }), {
+    return new Response(JSON.stringify({ synced: rows.length }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
