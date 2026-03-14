@@ -102,11 +102,13 @@ serve(async (req) => {
     const { start, end } = await req.json();
     if (!start || !end) throw new Error("start and end are required (YYYY-MM-DD HH:MM:SS)");
 
-    // Build Zadarma API request
+    // Build Zadarma API request — signature per official docs:
+    // ksort params, build query string (RFC1738), sign = base64(hmac_sha1(secret, method + paramsStr + md5hex(paramsStr)))
     const endpoint = "/v1/statistics/";
     const params: Record<string, string> = { start, end, type: "all" };
     const sortedKeys = Object.keys(params).sort();
-    const paramString = sortedKeys.map((k) => `${k}=${params[k]}`).join("&");
+    // RFC1738: spaces as %20, values URL-encoded
+    const paramString = sortedKeys.map((k) => `${k}=${encodeURIComponent(params[k]).replace(/%20/g, '+')}`).join("&");
 
     const md5Hash = md5Hex(paramString);
     const signString = endpoint + paramString + md5Hash;
