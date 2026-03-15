@@ -52,6 +52,7 @@ const activityTypeLabels: Record<string, string> = {
   'email': '📧 Email',
   'followup': '🔄 Seguimiento',
   'task': '✅ Tarea',
+  'stage_change': '🔀 Movimiento Pipeline',
 };
 
 const emptyDeal = {
@@ -185,10 +186,23 @@ const CRM = () => {
     if (!result.destination) return;
     const dealId = result.draggableId;
     const newStage = result.destination.droppableId;
+    const deal = deals.find(d => d.id === dealId);
+    const oldStage = deal?.stage;
+    if (oldStage === newStage) return;
     setDeals(prev => prev.map(d => d.id === dealId ? { ...d, stage: newStage } : d));
     const { error } = await supabase.from('deals').update({ stage: newStage } as any).eq('id', dealId);
-    if (error) { toast.error('Error al mover deal'); fetchDeals(); }
-  }, [fetchDeals]);
+    if (error) { toast.error('Error al mover deal'); fetchDeals(); return; }
+    // Log stage change as activity
+    if (user && deal) {
+      await supabase.from('deal_activities').insert({
+        deal_id: dealId,
+        created_by: user.id,
+        activity_type: 'stage_change',
+        note: `Pipeline: ${oldStage} → ${newStage}`,
+      });
+      fetchActivityCounts();
+    }
+  }, [fetchDeals, deals, user, fetchActivityCounts]);
 
   const handleAddDeal = async () => {
     if (!user) return;
