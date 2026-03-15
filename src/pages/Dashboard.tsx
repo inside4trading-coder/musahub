@@ -170,7 +170,13 @@ const Dashboard = () => {
             <div className="space-y-3">
               {activity.map((item, i) => (
                 <div key={i} className="flex items-center gap-3 rounded-xl p-3 hover:bg-muted transition-colors">
-                  <div className="h-2 w-2 rounded-full gradient-accent shrink-0" />
+                  <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", {
+                    'bg-primary': item.type === 'deal',
+                    'bg-secondary': item.type === 'campaign',
+                    'bg-warning': item.type === 'prospect',
+                    'bg-accent': item.type === 'pipeline',
+                    'bg-green-500': item.type === 'call',
+                  })} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-heading font-medium truncate">{item.text}</p>
                     <p className="text-xs text-muted-foreground">{item.time}</p>
