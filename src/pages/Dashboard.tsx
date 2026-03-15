@@ -32,10 +32,12 @@ const Dashboard = () => {
       startOfMonth.setHours(0, 0, 0, 0);
       const monthStart = startOfMonth.toISOString();
 
-      const [dealsRes, prospectsRes, campaignsRes] = await Promise.all([
+      const [dealsRes, prospectsRes, campaignsRes, stageChangesRes, validCallsRes] = await Promise.all([
         supabase.from('deals').select('id, deal_value, company_name, created_at, stage'),
         supabase.from('prospects').select('id, business_name, created_at').gte('created_at', monthStart),
         supabase.from('email_campaigns').select('id, campaign_name, created_at, status').gte('created_at', monthStart),
+        supabase.from('deal_activities').select('id, deal_id, note, created_at, activity_type').eq('activity_type', 'stage_change').order('created_at', { ascending: false }).limit(10),
+        supabase.from('calls').select('id, caller, destination, duration, started_at, agent_name, status').eq('status', 'answered').gte('duration', 60).order('started_at', { ascending: false }).limit(10),
       ]);
 
       const deals = dealsRes.data || [];
@@ -51,26 +53,54 @@ const Dashboard = () => {
         wonDealsValue: wonDeals.reduce((s, d) => s + Number(d.deal_value), 0),
       });
 
+      // Build deal name lookup for stage changes
+      const dealMap = new Map(deals.map(d => [d.id, d.company_name]));
+
       // Build recent activity from all sources
       const items: ActivityItem[] = [];
       deals.slice(0, 5).forEach(d => items.push({
         text: `Deal: "${d.company_name}" — €${Number(d.deal_value).toLocaleString()}`,
         created_at: d.created_at,
         time: formatDistanceToNow(new Date(d.created_at), { addSuffix: true, locale: es }),
+        type: 'deal',
       }));
       (prospectsRes.data || []).slice(0, 3).forEach(p => items.push({
         text: `Prospecto añadido: "${p.business_name}"`,
         created_at: p.created_at,
         time: formatDistanceToNow(new Date(p.created_at), { addSuffix: true, locale: es }),
+        type: 'prospect',
       }));
       (campaignsRes.data || []).slice(0, 3).forEach(c => items.push({
         text: `Campaña: "${c.campaign_name}" — ${c.status}`,
         created_at: c.created_at,
         time: formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: es }),
+        type: 'campaign',
       }));
+      // Pipeline movements
+      (stageChangesRes.data || []).forEach(sc => {
+        const dealName = dealMap.get(sc.deal_id) || 'Deal';
+        items.push({
+          text: `🔄 "${dealName}" — ${sc.note}`,
+          created_at: sc.created_at,
+          time: formatDistanceToNow(new Date(sc.created_at), { addSuffix: true, locale: es }),
+          type: 'pipeline',
+        });
+      });
+      // Valid calls (answered, >= 60s)
+      (validCallsRes.data || []).forEach(call => {
+        const mins = Math.floor((call.duration || 0) / 60);
+        const secs = (call.duration || 0) % 60;
+        const durStr = `${mins}:${String(secs).padStart(2, '0')}`;
+        items.push({
+          text: `📞 Llamada válida: ${call.destination || call.caller || 'Desconocido'} — ${durStr} min`,
+          created_at: call.started_at || new Date().toISOString(),
+          time: formatDistanceToNow(new Date(call.started_at || Date.now()), { addSuffix: true, locale: es }),
+          type: 'call',
+        });
+      });
 
       items.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      setActivity(items.slice(0, 10));
+      setActivity(items.slice(0, 15));
       setLoading(false);
     };
 
