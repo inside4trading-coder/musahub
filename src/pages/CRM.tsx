@@ -52,6 +52,7 @@ const activityTypeLabels: Record<string, string> = {
   'email': '📧 Email',
   'followup': '🔄 Seguimiento',
   'task': '✅ Tarea',
+  'stage_change': '🔀 Movimiento Pipeline',
 };
 
 const emptyDeal = {
