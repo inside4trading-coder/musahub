@@ -210,7 +210,7 @@ const Dashboard = () => {
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
               <div className="h-3 w-3 rounded-sm bg-primary" />
-              <span className="text-muted-foreground">Pipeline ({pipelineCount})</span>
+              <span className="text-muted-foreground">Lead → Contactado ({pipelineCount})</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: 'hsl(142, 71%, 45%)' }} />
