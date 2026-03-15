@@ -33,7 +33,7 @@ interface DailyActivityData {
 
 const chartConfig: ChartConfig = {
   pipeline: {
-    label: 'Movimientos Pipeline',
+    label: 'Lead → Contactado',
     color: 'hsl(var(--primary))',
   },
   calls: {
