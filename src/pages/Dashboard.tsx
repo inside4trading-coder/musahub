@@ -18,6 +18,7 @@ interface ActivityItem {
   text: string;
   time: string;
   created_at: string;
+  type: 'deal' | 'prospect' | 'campaign' | 'pipeline' | 'call';
 }
 
 const Dashboard = () => {
