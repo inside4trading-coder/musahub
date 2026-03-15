@@ -66,8 +66,8 @@ const Dashboard = () => {
         supabase.from('email_campaigns').select('id, campaign_name, created_at, status').gte('created_at', monthStart),
         supabase.from('deal_activities').select('id, deal_id, note, created_at, activity_type').eq('activity_type', 'stage_change').order('created_at', { ascending: false }).limit(15),
         supabase.from('calls').select('id, caller, destination, duration, started_at, agent_name, status').eq('status', 'answered').gte('duration', 60).order('started_at', { ascending: false }).limit(15),
-        // For chart: all stage changes in last 14 days
-        supabase.from('deal_activities').select('created_at').eq('activity_type', 'stage_change').gte('created_at', chartStart),
+        // For chart: only Lead → Contactado moves in last 14 days
+        supabase.from('deal_activities').select('created_at').eq('activity_type', 'stage_change').like('note', '%→ Contactado%').gte('created_at', chartStart),
         // For chart: all valid calls in last 14 days
         supabase.from('calls').select('started_at').eq('status', 'answered').gte('duration', 60).gte('started_at', chartStart),
       ]);
