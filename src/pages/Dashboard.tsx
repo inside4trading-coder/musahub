@@ -287,25 +287,44 @@ const Dashboard = () => {
       <div className="rounded-2xl bg-card border border-border p-6 shadow-card mb-6">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-lg font-bold text-heading lime-dot">Actividad — Últimos 14 días</h3>
-          <div className="flex items-center gap-4 text-xs">
+          <div className="flex flex-wrap items-center gap-3 text-xs">
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: 'hsl(220, 70%, 55%)' }} />
+              <span className="text-muted-foreground">Llamadas ({totalCallsSum})</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: 'hsl(38, 92%, 50%)' }} />
+              <span className="text-muted-foreground">Conectadas ({answeredCallsSum})</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: 'hsl(142, 71%, 45%)' }} />
+              <span className="text-muted-foreground">Válidas ({callCount})</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: 'hsl(280, 65%, 55%)' }} />
+              <span className="text-muted-foreground">Emails ({emailsSum})</span>
+            </div>
             <div className="flex items-center gap-1.5">
               <div className="h-3 w-3 rounded-sm bg-primary" />
               <span className="text-muted-foreground">Lead → Contactado ({pipelineCount})</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: 'hsl(142, 71%, 45%)' }} />
-              <span className="text-muted-foreground">Llamadas Válidas ({callCount})</span>
-            </div>
           </div>
         </div>
-        <ChartContainer config={chartConfig} className="h-[260px] w-full">
-          <BarChart data={dailyStats} barGap={2}>
+        <ChartContainer config={chartConfig} className="h-[320px] w-full">
+          <BarChart data={dailyStats} barGap={1}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
             <XAxis dataKey="label" tickLine={false} axisLine={false} className="text-xs fill-muted-foreground" />
             <YAxis allowDecimals={false} tickLine={false} axisLine={false} className="text-xs fill-muted-foreground" width={30} />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="pipeline" fill="var(--color-pipeline)" radius={[4, 4, 0, 0]} maxBarSize={28} />
-            <Bar dataKey="calls" fill="var(--color-calls)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+            <ReferenceLine y={DAILY_GOALS.totalCalls} stroke="hsl(220, 70%, 55%)" strokeDasharray="6 3" strokeOpacity={0.5} label={{ value: '60', position: 'right', fill: 'hsl(220, 70%, 55%)', fontSize: 10 }} />
+            <ReferenceLine y={DAILY_GOALS.answeredCalls} stroke="hsl(38, 92%, 50%)" strokeDasharray="6 3" strokeOpacity={0.5} label={{ value: '30', position: 'right', fill: 'hsl(38, 92%, 50%)', fontSize: 10 }} />
+            <ReferenceLine y={DAILY_GOALS.emails} stroke="hsl(280, 65%, 55%)" strokeDasharray="6 3" strokeOpacity={0.5} label={{ value: '20', position: 'right', fill: 'hsl(280, 65%, 55%)', fontSize: 10 }} />
+            <ReferenceLine y={DAILY_GOALS.calls} stroke="hsl(142, 71%, 45%)" strokeDasharray="6 3" strokeOpacity={0.5} label={{ value: '10', position: 'right', fill: 'hsl(142, 71%, 45%)', fontSize: 10 }} />
+            <Bar dataKey="totalCalls" fill="var(--color-totalCalls)" radius={[4, 4, 0, 0]} maxBarSize={20} />
+            <Bar dataKey="answeredCalls" fill="var(--color-answeredCalls)" radius={[4, 4, 0, 0]} maxBarSize={20} />
+            <Bar dataKey="calls" fill="var(--color-calls)" radius={[4, 4, 0, 0]} maxBarSize={20} />
+            <Bar dataKey="emails" fill="var(--color-emails)" radius={[4, 4, 0, 0]} maxBarSize={20} />
+            <Bar dataKey="pipeline" fill="var(--color-pipeline)" radius={[4, 4, 0, 0]} maxBarSize={20} />
           </BarChart>
         </ChartContainer>
       </div>
