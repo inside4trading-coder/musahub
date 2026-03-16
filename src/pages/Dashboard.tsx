@@ -149,16 +149,15 @@ const Dashboard = () => {
         items.sort((a, b) => (parseTimestamp(b.created_at)?.getTime() || 0) - (parseTimestamp(a.created_at)?.getTime() || 0));
         setActivity(items.slice(0, 20));
 
-        const dailyMap = new Map<string, { pipeline: number; calls: number }>();
+        const dailyMap = new Map<string, { pipeline: number; calls: number; totalCalls: number; answeredCalls: number; emails: number }>();
         for (let i = 0; i < 14; i++) {
           const day = format(subDays(new Date(), 13 - i), 'yyyy-MM-dd');
-          dailyMap.set(day, { pipeline: 0, calls: 0 });
+          dailyMap.set(day, { pipeline: 0, calls: 0, totalCalls: 0, answeredCalls: 0, emails: 0 });
         }
 
         (stageChangesChartRes.data || []).forEach(sc => {
           const activityDate = parseTimestamp(sc.created_at);
           if (!activityDate) return;
-
           const day = format(activityDate, 'yyyy-MM-dd');
           const entry = dailyMap.get(day);
           if (entry) entry.pipeline++;
@@ -167,21 +166,42 @@ const Dashboard = () => {
         (validCallsChartRes.data || []).forEach(call => {
           const activityDate = parseTimestamp(call.started_at);
           if (!activityDate) return;
-
           const day = format(activityDate, 'yyyy-MM-dd');
           const entry = dailyMap.get(day);
           if (entry) entry.calls++;
         });
 
+        (allCallsChartRes.data || []).forEach(call => {
+          const activityDate = parseTimestamp(call.started_at);
+          if (!activityDate) return;
+          const day = format(activityDate, 'yyyy-MM-dd');
+          const entry = dailyMap.get(day);
+          if (entry) entry.totalCalls++;
+        });
+
+        (answeredCallsChartRes.data || []).forEach(call => {
+          const activityDate = parseTimestamp(call.started_at);
+          if (!activityDate) return;
+          const day = format(activityDate, 'yyyy-MM-dd');
+          const entry = dailyMap.get(day);
+          if (entry) entry.answeredCalls++;
+        });
+
+        (emailLogsChartRes.data || []).forEach(log => {
+          const activityDate = parseTimestamp(log.sent_at);
+          if (!activityDate) return;
+          const day = format(activityDate, 'yyyy-MM-dd');
+          const entry = dailyMap.get(day);
+          if (entry) entry.emails++;
+        });
+
         const chartData: DailyActivityData[] = [];
         dailyMap.forEach((val, key) => {
           const labelDate = parseTimestamp(`${key}T00:00:00`);
-
           chartData.push({
             date: key,
             label: labelDate ? format(labelDate, 'dd MMM', { locale: es }) : key,
-            pipeline: val.pipeline,
-            calls: val.calls,
+            ...val,
           });
         });
 
