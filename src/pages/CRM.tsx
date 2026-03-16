@@ -872,7 +872,7 @@ const CRM = () => {
                             <div className="flex items-center gap-2 mt-1.5">
                               <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                                 <Calendar className="h-2.5 w-2.5" />
-                                {format(new Date(act.activity_date), 'dd/MM/yyyy HH:mm')}
+                                {parseCRMDate(act.activity_date) ? format(parseCRMDate(act.activity_date) as Date, 'dd/MM/yyyy HH:mm') : 'Fecha inválida'}
                               </span>
                               {act.created_by && (
                                 <span className="text-[10px] text-muted-foreground">
