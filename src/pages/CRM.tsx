@@ -335,10 +335,12 @@ const CRM = () => {
     });
     if (sortByNextStep) {
       result = [...result].sort((a, b) => {
-        if (!a.next_step_date && !b.next_step_date) return 0;
-        if (!a.next_step_date) return 1;
-        if (!b.next_step_date) return -1;
-        return new Date(a.next_step_date).getTime() - new Date(b.next_step_date).getTime();
+        const aDate = parseCRMDate(a.next_step_date, true);
+        const bDate = parseCRMDate(b.next_step_date, true);
+        if (!aDate && !bDate) return 0;
+        if (!aDate) return 1;
+        if (!bDate) return -1;
+        return aDate.getTime() - bDate.getTime();
       });
     }
     return result;
