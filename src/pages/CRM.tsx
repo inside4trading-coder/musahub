@@ -61,9 +61,15 @@ const emptyDeal = {
   assigned_to: '' as string, next_step: '', next_step_date: '',
 };
 
+function parseCRMDate(dateStr: string | null | undefined, dateOnly = false): Date | null {
+  if (!dateStr) return null;
+  const parsed = new Date(dateOnly ? `${dateStr}T00:00:00` : dateStr);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 function getNextStepDateColor(dateStr: string | null | undefined): { bg: string; border: string; text: string } {
-  if (!dateStr) return { bg: '#F0F2F7', border: '#E5E9F0', text: '#9BA3B2' };
-  const d = new Date(dateStr + 'T00:00:00');
+  const d = parseCRMDate(dateStr, true);
+  if (!d) return { bg: '#F0F2F7', border: '#E5E9F0', text: '#9BA3B2' };
   const today = new Date(); today.setHours(0,0,0,0);
   if (d <= today) return { bg: '#FEF2F2', border: '#EF4444', text: '#EF4444' }; // past/today = red
   if (isBefore(d, addDays(today, 3))) return { bg: '#FEF9C3', border: '#F59E0B', text: '#92400E' }; // within 2 days = warning
@@ -329,10 +335,12 @@ const CRM = () => {
     });
     if (sortByNextStep) {
       result = [...result].sort((a, b) => {
-        if (!a.next_step_date && !b.next_step_date) return 0;
-        if (!a.next_step_date) return 1;
-        if (!b.next_step_date) return -1;
-        return new Date(a.next_step_date).getTime() - new Date(b.next_step_date).getTime();
+        const aDate = parseCRMDate(a.next_step_date, true);
+        const bDate = parseCRMDate(b.next_step_date, true);
+        if (!aDate && !bDate) return 0;
+        if (!aDate) return 1;
+        if (!bDate) return -1;
+        return aDate.getTime() - bDate.getTime();
       });
     }
     return result;
@@ -576,18 +584,23 @@ const CRM = () => {
                                           <p className="text-[11px] text-heading truncate flex-1" title={deal.next_step}>
                                             {deal.next_step.length > 60 ? deal.next_step.slice(0, 60) + '…' : deal.next_step}
                                           </p>
-                                          {deal.next_step_date && (
-                                            <span
-                                              className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
-                                              style={{
-                                                backgroundColor: dateColors.bg,
-                                                border: `1px solid ${dateColors.border}`,
-                                                color: dateColors.text,
-                                              }}
-                                            >
-                                              {format(new Date(deal.next_step_date + 'T00:00:00'), 'dd MMM', { locale: es })}
-                                            </span>
-                                          )}
+                                           {(() => {
+                                             const formattedNextStepDate = parseCRMDate(deal.next_step_date, true);
+                                             if (!formattedNextStepDate) return null;
+
+                                             return (
+                                               <span
+                                                 className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
+                                                 style={{
+                                                   backgroundColor: dateColors.bg,
+                                                   border: `1px solid ${dateColors.border}`,
+                                                   color: dateColors.text,
+                                                 }}
+                                               >
+                                                 {format(formattedNextStepDate, 'dd MMM', { locale: es })}
+                                               </span>
+                                             );
+                                           })()}
                                         </div>
                                       ) : (
                                         <p className="text-[11px] text-muted-foreground border border-dashed border-border rounded-lg px-2 py-1 text-center">
@@ -859,7 +872,7 @@ const CRM = () => {
                             <div className="flex items-center gap-2 mt-1.5">
                               <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                                 <Calendar className="h-2.5 w-2.5" />
-                                {format(new Date(act.activity_date), 'dd/MM/yyyy HH:mm')}
+                                {parseCRMDate(act.activity_date) ? format(parseCRMDate(act.activity_date) as Date, 'dd/MM/yyyy HH:mm') : 'Fecha inválida'}
                               </span>
                               {act.created_by && (
                                 <span className="text-[10px] text-muted-foreground">
