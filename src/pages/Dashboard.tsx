@@ -29,7 +29,17 @@ interface DailyActivityData {
   label: string;
   pipeline: number;
   calls: number;
+  totalCalls: number;
+  answeredCalls: number;
+  emails: number;
 }
+
+const DAILY_GOALS = {
+  totalCalls: 60,
+  answeredCalls: 30,
+  calls: 10, // valid calls
+  emails: 20,
+};
 
 const chartConfig: ChartConfig = {
   pipeline: {
@@ -39,6 +49,18 @@ const chartConfig: ChartConfig = {
   calls: {
     label: 'Llamadas Válidas',
     color: 'hsl(142, 71%, 45%)',
+  },
+  totalCalls: {
+    label: 'Llamadas Totales',
+    color: 'hsl(220, 70%, 55%)',
+  },
+  answeredCalls: {
+    label: 'Llamadas Conectadas',
+    color: 'hsl(38, 92%, 50%)',
+  },
+  emails: {
+    label: 'Emails Enviados',
+    color: 'hsl(280, 65%, 55%)',
   },
 };
 
