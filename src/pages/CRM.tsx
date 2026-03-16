@@ -61,9 +61,15 @@ const emptyDeal = {
   assigned_to: '' as string, next_step: '', next_step_date: '',
 };
 
+function parseCRMDate(dateStr: string | null | undefined, dateOnly = false): Date | null {
+  if (!dateStr) return null;
+  const parsed = new Date(dateOnly ? `${dateStr}T00:00:00` : dateStr);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 function getNextStepDateColor(dateStr: string | null | undefined): { bg: string; border: string; text: string } {
-  if (!dateStr) return { bg: '#F0F2F7', border: '#E5E9F0', text: '#9BA3B2' };
-  const d = new Date(dateStr + 'T00:00:00');
+  const d = parseCRMDate(dateStr, true);
+  if (!d) return { bg: '#F0F2F7', border: '#E5E9F0', text: '#9BA3B2' };
   const today = new Date(); today.setHours(0,0,0,0);
   if (d <= today) return { bg: '#FEF2F2', border: '#EF4444', text: '#EF4444' }; // past/today = red
   if (isBefore(d, addDays(today, 3))) return { bg: '#FEF9C3', border: '#F59E0B', text: '#92400E' }; // within 2 days = warning
