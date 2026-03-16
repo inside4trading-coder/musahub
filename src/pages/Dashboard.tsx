@@ -42,6 +42,13 @@ const chartConfig: ChartConfig = {
   },
 };
 
+const parseTimestamp = (value?: string | null) => {
+  if (!value) return null;
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 const Dashboard = () => {
   const [kpis, setKpis] = useState<KpiData | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
