@@ -89,7 +89,7 @@ const Dashboard = () => {
         fourteenDaysAgo.setHours(0, 0, 0, 0);
         const chartStart = fourteenDaysAgo.toISOString();
 
-        const [dealsRes, prospectsRes, campaignsRes, stageChangesRes, validCallsRes, stageChangesChartRes, validCallsChartRes] = await Promise.all([
+        const [dealsRes, prospectsRes, campaignsRes, stageChangesRes, validCallsRes, stageChangesChartRes, validCallsChartRes, allCallsChartRes, answeredCallsChartRes, emailLogsChartRes] = await Promise.all([
           supabase.from('deals').select('id, deal_value, company_name, created_at, stage'),
           supabase.from('prospects').select('id, business_name, created_at').gte('created_at', monthStart),
           supabase.from('email_campaigns').select('id, campaign_name, created_at, status').gte('created_at', monthStart),
@@ -97,6 +97,9 @@ const Dashboard = () => {
           supabase.from('calls').select('id, caller, destination, duration, started_at, agent_name, status').eq('status', 'answered').gte('duration', 60).order('started_at', { ascending: false }).limit(15),
           supabase.from('deal_activities').select('created_at').eq('activity_type', 'stage_change').like('note', '%→ Contactado%').gte('created_at', chartStart),
           supabase.from('calls').select('started_at').eq('status', 'answered').gte('duration', 60).gte('started_at', chartStart),
+          supabase.from('calls').select('started_at').gte('started_at', chartStart),
+          supabase.from('calls').select('started_at').eq('status', 'answered').gte('started_at', chartStart),
+          supabase.from('email_logs').select('sent_at').eq('status', 'sent').gte('sent_at', chartStart),
         ]);
 
         const deals = dealsRes.data || [];
