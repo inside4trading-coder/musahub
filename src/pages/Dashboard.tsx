@@ -242,6 +242,9 @@ const Dashboard = () => {
   // Activity summary counts
   const pipelineCount = activity.filter(a => a.type === 'pipeline').length;
   const callCount = activity.filter(a => a.type === 'call').length;
+  const totalCallsSum = dailyStats.reduce((s, d) => s + d.totalCalls, 0);
+  const answeredCallsSum = dailyStats.reduce((s, d) => s + d.answeredCalls, 0);
+  const emailsSum = dailyStats.reduce((s, d) => s + d.emails, 0);
 
   if (loading) {
     return (
