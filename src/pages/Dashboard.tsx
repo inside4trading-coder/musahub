@@ -7,7 +7,7 @@ import { formatDistanceToNow, format, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { ChartContainer, ChartConfig, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
 
 interface KpiData {
   dealCount: number;
