@@ -584,18 +584,23 @@ const CRM = () => {
                                           <p className="text-[11px] text-heading truncate flex-1" title={deal.next_step}>
                                             {deal.next_step.length > 60 ? deal.next_step.slice(0, 60) + '…' : deal.next_step}
                                           </p>
-                                          {deal.next_step_date && (
-                                            <span
-                                              className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
-                                              style={{
-                                                backgroundColor: dateColors.bg,
-                                                border: `1px solid ${dateColors.border}`,
-                                                color: dateColors.text,
-                                              }}
-                                            >
-                                              {format(new Date(deal.next_step_date + 'T00:00:00'), 'dd MMM', { locale: es })}
-                                            </span>
-                                          )}
+                                           {(() => {
+                                             const formattedNextStepDate = parseCRMDate(deal.next_step_date, true);
+                                             if (!formattedNextStepDate) return null;
+
+                                             return (
+                                               <span
+                                                 className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
+                                                 style={{
+                                                   backgroundColor: dateColors.bg,
+                                                   border: `1px solid ${dateColors.border}`,
+                                                   color: dateColors.text,
+                                                 }}
+                                               >
+                                                 {format(formattedNextStepDate, 'dd MMM', { locale: es })}
+                                               </span>
+                                             );
+                                           })()}
                                         </div>
                                       ) : (
                                         <p className="text-[11px] text-muted-foreground border border-dashed border-border rounded-lg px-2 py-1 text-center">
