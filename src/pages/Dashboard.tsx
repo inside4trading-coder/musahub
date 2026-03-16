@@ -1,13 +1,13 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Briefcase, Euro, Users, Mail, BookOpen, ArrowRight, Loader2, Trophy, Phone, GitBranch } from 'lucide-react';
+import { Briefcase, Euro, Users, Mail, BookOpen, ArrowRight, Loader2, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { formatDistanceToNow, format, subDays, startOfDay } from 'date-fns';
+import { formatDistanceToNow, format, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { ChartContainer, ChartConfig, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, BarChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 interface KpiData {
   dealCount: number;
@@ -42,6 +42,13 @@ const chartConfig: ChartConfig = {
   },
 };
 
+const parseTimestamp = (value?: string | null) => {
+  if (!value) return null;
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 const Dashboard = () => {
   const [kpis, setKpis] = useState<KpiData | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
@@ -50,106 +57,124 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-      const monthStart = startOfMonth.toISOString();
+      try {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+        const monthStart = startOfMonth.toISOString();
 
-      // Last 14 days for chart
-      const fourteenDaysAgo = subDays(new Date(), 13);
-      fourteenDaysAgo.setHours(0, 0, 0, 0);
-      const chartStart = fourteenDaysAgo.toISOString();
+        const fourteenDaysAgo = subDays(new Date(), 13);
+        fourteenDaysAgo.setHours(0, 0, 0, 0);
+        const chartStart = fourteenDaysAgo.toISOString();
 
-      const [dealsRes, prospectsRes, campaignsRes, stageChangesRes, validCallsRes, stageChangesChartRes, validCallsChartRes] = await Promise.all([
-        supabase.from('deals').select('id, deal_value, company_name, created_at, stage'),
-        supabase.from('prospects').select('id, business_name, created_at').gte('created_at', monthStart),
-        supabase.from('email_campaigns').select('id, campaign_name, created_at, status').gte('created_at', monthStart),
-        supabase.from('deal_activities').select('id, deal_id, note, created_at, activity_type').eq('activity_type', 'stage_change').order('created_at', { ascending: false }).limit(15),
-        supabase.from('calls').select('id, caller, destination, duration, started_at, agent_name, status').eq('status', 'answered').gte('duration', 60).order('started_at', { ascending: false }).limit(15),
-        // For chart: only Lead → Contactado moves in last 14 days
-        supabase.from('deal_activities').select('created_at').eq('activity_type', 'stage_change').like('note', '%→ Contactado%').gte('created_at', chartStart),
-        // For chart: all valid calls in last 14 days
-        supabase.from('calls').select('started_at').eq('status', 'answered').gte('duration', 60).gte('started_at', chartStart),
-      ]);
+        const [dealsRes, prospectsRes, campaignsRes, stageChangesRes, validCallsRes, stageChangesChartRes, validCallsChartRes] = await Promise.all([
+          supabase.from('deals').select('id, deal_value, company_name, created_at, stage'),
+          supabase.from('prospects').select('id, business_name, created_at').gte('created_at', monthStart),
+          supabase.from('email_campaigns').select('id, campaign_name, created_at, status').gte('created_at', monthStart),
+          supabase.from('deal_activities').select('id, deal_id, note, created_at, activity_type').eq('activity_type', 'stage_change').order('created_at', { ascending: false }).limit(15),
+          supabase.from('calls').select('id, caller, destination, duration, started_at, agent_name, status').eq('status', 'answered').gte('duration', 60).order('started_at', { ascending: false }).limit(15),
+          supabase.from('deal_activities').select('created_at').eq('activity_type', 'stage_change').like('note', '%→ Contactado%').gte('created_at', chartStart),
+          supabase.from('calls').select('started_at').eq('status', 'answered').gte('duration', 60).gte('started_at', chartStart),
+        ]);
 
-      const deals = dealsRes.data || [];
-      const activeDealStages = ['Lead', 'Contactado', 'Reunión Agendada', 'Propuesta Enviada', 'Negociación'];
-      const activeDeals = deals.filter(d => activeDealStages.includes(d.stage));
-      const wonDeals = deals.filter(d => d.stage === 'Cerrado Ganado');
+        const deals = dealsRes.data || [];
+        const activeDealStages = ['Lead', 'Contactado', 'Reunión Agendada', 'Propuesta Enviada', 'Negociación'];
+        const activeDeals = deals.filter(d => activeDealStages.includes(d.stage));
+        const wonDeals = deals.filter(d => d.stage === 'Cerrado Ganado');
 
-      setKpis({
-        dealCount: activeDeals.length,
-        pipelineValue: activeDeals.reduce((s, d) => s + Number(d.deal_value), 0),
-        prospectsThisMonth: (prospectsRes.data || []).length,
-        campaignsThisMonth: (campaignsRes.data || []).length,
-        wonDealsValue: wonDeals.reduce((s, d) => s + Number(d.deal_value), 0),
-      });
-
-      // Build deal name lookup
-      const dealMap = new Map(deals.map(d => [d.id, d.company_name]));
-
-      // Build activity feed — ONLY pipeline + valid calls
-      const items: ActivityItem[] = [];
-      (stageChangesRes.data || []).forEach(sc => {
-        if (!sc.created_at) return;
-        const d = new Date(sc.created_at);
-        if (isNaN(d.getTime())) return;
-        const dealName = dealMap.get(sc.deal_id) || 'Deal';
-        items.push({
-          text: `🔄 "${dealName}" — ${sc.note}`,
-          created_at: sc.created_at,
-          time: formatDistanceToNow(d, { addSuffix: true, locale: es }),
-          type: 'pipeline',
+        setKpis({
+          dealCount: activeDeals.length,
+          pipelineValue: activeDeals.reduce((s, d) => s + Number(d.deal_value), 0),
+          prospectsThisMonth: (prospectsRes.data || []).length,
+          campaignsThisMonth: (campaignsRes.data || []).length,
+          wonDealsValue: wonDeals.reduce((s, d) => s + Number(d.deal_value), 0),
         });
-      });
-      (validCallsRes.data || []).forEach(call => {
-        const rawDate = call.started_at;
-        if (!rawDate) return;
-        const d = new Date(rawDate);
-        if (isNaN(d.getTime())) return;
-        const mins = Math.floor((call.duration || 0) / 60);
-        const secs = (call.duration || 0) % 60;
-        const durStr = `${mins}:${String(secs).padStart(2, '0')}`;
-        items.push({
-          text: `📞 Llamada válida: ${call.destination || call.caller || 'Desconocido'} — ${durStr} min`,
-          created_at: rawDate,
-          time: formatDistanceToNow(d, { addSuffix: true, locale: es }),
-          type: 'call',
+
+        const dealMap = new Map(deals.map(d => [d.id, d.company_name]));
+        const items: ActivityItem[] = [];
+
+        (stageChangesRes.data || []).forEach(sc => {
+          const activityDate = parseTimestamp(sc.created_at);
+          if (!activityDate) return;
+
+          const dealName = dealMap.get(sc.deal_id) || 'Deal';
+          items.push({
+            text: `🔄 "${dealName}" — ${sc.note}`,
+            created_at: sc.created_at,
+            time: formatDistanceToNow(activityDate, { addSuffix: true, locale: es }),
+            type: 'pipeline',
+          });
         });
-      });
 
-      items.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      setActivity(items.slice(0, 20));
+        (validCallsRes.data || []).forEach(call => {
+          const activityDate = parseTimestamp(call.started_at);
+          if (!activityDate) return;
 
-      // Build daily chart data for last 14 days
-      const dailyMap = new Map<string, { pipeline: number; calls: number }>();
-      for (let i = 0; i < 14; i++) {
-        const day = format(subDays(new Date(), 13 - i), 'yyyy-MM-dd');
-        dailyMap.set(day, { pipeline: 0, calls: 0 });
+          const mins = Math.floor((call.duration || 0) / 60);
+          const secs = (call.duration || 0) % 60;
+          const durStr = `${mins}:${String(secs).padStart(2, '0')}`;
+          items.push({
+            text: `📞 Llamada válida: ${call.destination || call.caller || 'Desconocido'} — ${durStr} min`,
+            created_at: call.started_at,
+            time: formatDistanceToNow(activityDate, { addSuffix: true, locale: es }),
+            type: 'call',
+          });
+        });
+
+        items.sort((a, b) => (parseTimestamp(b.created_at)?.getTime() || 0) - (parseTimestamp(a.created_at)?.getTime() || 0));
+        setActivity(items.slice(0, 20));
+
+        const dailyMap = new Map<string, { pipeline: number; calls: number }>();
+        for (let i = 0; i < 14; i++) {
+          const day = format(subDays(new Date(), 13 - i), 'yyyy-MM-dd');
+          dailyMap.set(day, { pipeline: 0, calls: 0 });
+        }
+
+        (stageChangesChartRes.data || []).forEach(sc => {
+          const activityDate = parseTimestamp(sc.created_at);
+          if (!activityDate) return;
+
+          const day = format(activityDate, 'yyyy-MM-dd');
+          const entry = dailyMap.get(day);
+          if (entry) entry.pipeline++;
+        });
+
+        (validCallsChartRes.data || []).forEach(call => {
+          const activityDate = parseTimestamp(call.started_at);
+          if (!activityDate) return;
+
+          const day = format(activityDate, 'yyyy-MM-dd');
+          const entry = dailyMap.get(day);
+          if (entry) entry.calls++;
+        });
+
+        const chartData: DailyActivityData[] = [];
+        dailyMap.forEach((val, key) => {
+          const labelDate = parseTimestamp(`${key}T00:00:00`);
+
+          chartData.push({
+            date: key,
+            label: labelDate ? format(labelDate, 'dd MMM', { locale: es }) : key,
+            pipeline: val.pipeline,
+            calls: val.calls,
+          });
+        });
+
+        setDailyStats(chartData);
+      } catch (error) {
+        console.error('Dashboard activity error:', error);
+        setKpis({
+          dealCount: 0,
+          pipelineValue: 0,
+          prospectsThisMonth: 0,
+          campaignsThisMonth: 0,
+          wonDealsValue: 0,
+        });
+        setActivity([]);
+        setDailyStats([]);
+      } finally {
+        setLoading(false);
       }
-      (stageChangesChartRes.data || []).forEach(sc => {
-        const day = format(new Date(sc.created_at), 'yyyy-MM-dd');
-        const entry = dailyMap.get(day);
-        if (entry) entry.pipeline++;
-      });
-      (validCallsChartRes.data || []).forEach(call => {
-        if (!call.started_at) return;
-        const day = format(new Date(call.started_at), 'yyyy-MM-dd');
-        const entry = dailyMap.get(day);
-        if (entry) entry.calls++;
-      });
-
-      const chartData: DailyActivityData[] = [];
-      dailyMap.forEach((val, key) => {
-        chartData.push({
-          date: key,
-          label: format(new Date(key + 'T00:00:00'), 'dd MMM', { locale: es }),
-          pipeline: val.pipeline,
-          calls: val.calls,
-        });
-      });
-      setDailyStats(chartData);
-      setLoading(false);
     };
 
     fetchData();
