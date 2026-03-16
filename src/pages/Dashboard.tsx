@@ -91,22 +91,29 @@ const Dashboard = () => {
       // Build activity feed — ONLY pipeline + valid calls
       const items: ActivityItem[] = [];
       (stageChangesRes.data || []).forEach(sc => {
+        if (!sc.created_at) return;
+        const d = new Date(sc.created_at);
+        if (isNaN(d.getTime())) return;
         const dealName = dealMap.get(sc.deal_id) || 'Deal';
         items.push({
           text: `🔄 "${dealName}" — ${sc.note}`,
           created_at: sc.created_at,
-          time: formatDistanceToNow(new Date(sc.created_at), { addSuffix: true, locale: es }),
+          time: formatDistanceToNow(d, { addSuffix: true, locale: es }),
           type: 'pipeline',
         });
       });
       (validCallsRes.data || []).forEach(call => {
+        const rawDate = call.started_at;
+        if (!rawDate) return;
+        const d = new Date(rawDate);
+        if (isNaN(d.getTime())) return;
         const mins = Math.floor((call.duration || 0) / 60);
         const secs = (call.duration || 0) % 60;
         const durStr = `${mins}:${String(secs).padStart(2, '0')}`;
         items.push({
           text: `📞 Llamada válida: ${call.destination || call.caller || 'Desconocido'} — ${durStr} min`,
-          created_at: call.started_at || new Date().toISOString(),
-          time: formatDistanceToNow(new Date(call.started_at || Date.now()), { addSuffix: true, locale: es }),
+          created_at: rawDate,
+          time: formatDistanceToNow(d, { addSuffix: true, locale: es }),
           type: 'call',
         });
       });
