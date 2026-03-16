@@ -143,7 +143,7 @@ const Dashboard = () => {
       dailyMap.forEach((val, key) => {
         chartData.push({
           date: key,
-          label: format(new Date(key), 'dd MMM', { locale: es }),
+          label: format(new Date(key + 'T00:00:00'), 'dd MMM', { locale: es }),
           pipeline: val.pipeline,
           calls: val.calls,
         });
