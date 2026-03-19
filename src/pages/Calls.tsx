@@ -491,9 +491,9 @@ const Calls = () => {
                     <TableHead className="text-xs">Destino</TableHead>
                     <TableHead className="text-xs">Dirección</TableHead>
                     <TableHead className="text-xs">Estado</TableHead>
-                    <TableHead className="text-xs">Duración</TableHead>
-                    <TableHead className="text-xs">Coste</TableHead>
-                  </TableRow>
+                     <TableHead className="text-xs">Duración</TableHead>
+                     <TableHead className="text-xs">Coste</TableHead>
+                     <TableHead className="text-xs">Grabación</TableHead>
                 </TableHeader>
                 <TableBody>
                   {filteredCalls.map(c => (
