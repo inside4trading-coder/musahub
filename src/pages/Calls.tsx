@@ -528,6 +528,27 @@ const Calls = () => {
                       </TableCell>
                       <TableCell className="text-xs font-mono">{fmtDurationMmSs(Number(c.duration) || 0)}</TableCell>
                       <TableCell className="text-xs">€{Number(c.cost || 0).toFixed(2)}</TableCell>
+                      <TableCell>
+                        {c.status === 'answered' && Number(c.duration) > 0 ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => handlePlayRecording(c.call_id)}
+                            disabled={loadingRecording === c.call_id}
+                          >
+                            {loadingRecording === c.call_id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                            ) : playingCallId === c.call_id ? (
+                              <Pause className="h-3.5 w-3.5 text-primary" />
+                            ) : (
+                              <Play className="h-3.5 w-3.5 text-muted-foreground" />
+                            )}
+                          </Button>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
