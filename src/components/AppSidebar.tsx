@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  LayoutDashboard, Briefcase, Map, Mail, Phone,
+  LayoutDashboard, Briefcase, Map, Mail, BarChart3, Phone,
   BookOpen, Settings, LogOut, ChevronLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ const navItems = [
   { label: 'CRM', icon: Briefcase, path: '/crm' },
   { label: 'Prospección', icon: Map, path: '/prospecting' },
   { label: 'Email Campaigns', icon: Mail, path: '/email-campaigns' },
+  { label: 'Métricas de Email', icon: BarChart3, path: '/email-metrics' },
   { label: 'Llamadas', icon: Phone, path: '/calls' },
   { label: 'Knowledge Base', icon: BookOpen, path: '/knowledge' },
   { label: 'Configuración', icon: Settings, path: '/settings' },
