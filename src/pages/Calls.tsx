@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, PhoneCall, Clock, Euro, Percent, CheckCircle, Loader2, RefreshCw, ArrowUpDown, Filter } from 'lucide-react';
+import { Phone, PhoneCall, Clock, Euro, Percent, CheckCircle, Loader2, RefreshCw, ArrowUpDown, Filter, Play, Pause, Volume2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
