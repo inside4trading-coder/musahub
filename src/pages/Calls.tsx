@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, PhoneCall, Clock, Euro, Percent, CheckCircle, Loader2, RefreshCw, ArrowUpDown, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
