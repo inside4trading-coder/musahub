@@ -173,6 +173,61 @@ const Calls = () => {
 
   const totalPages = Math.ceil(totalCallsCount / perPage);
 
+  const handlePlayRecording = async (callId: string) => {
+    // If already playing this call, toggle pause/play
+    if (playingCallId === callId && audioRef.current) {
+      if (audioRef.current.paused) {
+        audioRef.current.play();
+      } else {
+        audioRef.current.pause();
+      }
+      return;
+    }
+
+    // Stop current audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    setLoadingRecording(callId);
+    setPlayingCallId(null);
+    setRecordingUrl(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('get-call-recording', {
+        body: { call_id: callId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (!data?.link) throw new Error('No se encontró grabación para esta llamada');
+
+      setRecordingUrl(data.link);
+      setPlayingCallId(callId);
+
+      const audio = new Audio(data.link);
+      audioRef.current = audio;
+      audio.onended = () => {
+        setPlayingCallId(null);
+        setRecordingUrl(null);
+        audioRef.current = null;
+      };
+      audio.onerror = () => {
+        toast({ title: 'Error de audio', description: 'No se pudo reproducir la grabación.', variant: 'destructive' });
+        setPlayingCallId(null);
+        setRecordingUrl(null);
+        audioRef.current = null;
+      };
+      await audio.play();
+    } catch (err: any) {
+      toast({ title: 'Grabación no disponible', description: err.message, variant: 'destructive' });
+      setPlayingCallId(null);
+      setRecordingUrl(null);
+    } finally {
+      setLoadingRecording(null);
+    }
+  };
+
   const kpiCards = [
     { label: 'Total Llamadas', value: String(kpis.total), icon: Phone },
     { label: 'Llamadas Válidas', value: String(kpis.valid), icon: CheckCircle, accent: true },
