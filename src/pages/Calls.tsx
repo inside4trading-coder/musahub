@@ -69,6 +69,10 @@ const Calls = () => {
   const [directionFilter, setDirectionFilter] = useState<string>('all');
   const [agentSort, setAgentSort] = useState<{ col: string; asc: boolean }>({ col: 'valid_calls', asc: false });
   const [page, setPage] = useState(0);
+  const [playingCallId, setPlayingCallId] = useState<string | null>(null);
+  const [loadingRecording, setLoadingRecording] = useState<string | null>(null);
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const perPage = 25;
 
   const dateRange = useMemo(() => {
