@@ -42,6 +42,7 @@ const App = () => (
               <Route path="/prospecting" element={<Prospecting />} />
               
               <Route path="/email-campaigns" element={<EmailCampaigns />} />
+              <Route path="/email-metrics" element={<EmailMetrics />} />
               <Route path="/calls" element={<Calls />} />
               <Route path="/knowledge" element={<Knowledge />} />
               <Route path="/settings" element={<SettingsPage />} />
