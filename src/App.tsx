@@ -13,6 +13,7 @@ import CRM from "./pages/CRM";
 import Prospecting from "./pages/Prospecting";
 import Calls from "./pages/Calls";
 import EmailCampaigns from "./pages/EmailCampaigns";
+import EmailMetrics from "./pages/EmailMetrics";
 import Knowledge from "./pages/Knowledge";
 import SettingsPage from "./pages/Settings";
 import NotFound from "./pages/NotFound";
