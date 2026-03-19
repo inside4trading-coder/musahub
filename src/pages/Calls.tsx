@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, PhoneCall, Clock, Euro, Percent, CheckCircle, Loader2, RefreshCw, ArrowUpDown, Filter } from 'lucide-react';
+import { Phone, PhoneCall, Clock, Euro, Percent, CheckCircle, Loader2, RefreshCw, ArrowUpDown, Filter, Play, Pause, Volume2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -69,6 +69,10 @@ const Calls = () => {
   const [directionFilter, setDirectionFilter] = useState<string>('all');
   const [agentSort, setAgentSort] = useState<{ col: string; asc: boolean }>({ col: 'valid_calls', asc: false });
   const [page, setPage] = useState(0);
+  const [playingCallId, setPlayingCallId] = useState<string | null>(null);
+  const [loadingRecording, setLoadingRecording] = useState<string | null>(null);
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const perPage = 25;
 
   const dateRange = useMemo(() => {
@@ -168,6 +172,61 @@ const Calls = () => {
   };
 
   const totalPages = Math.ceil(totalCallsCount / perPage);
+
+  const handlePlayRecording = async (callId: string) => {
+    // If already playing this call, toggle pause/play
+    if (playingCallId === callId && audioRef.current) {
+      if (audioRef.current.paused) {
+        audioRef.current.play();
+      } else {
+        audioRef.current.pause();
+      }
+      return;
+    }
+
+    // Stop current audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    setLoadingRecording(callId);
+    setPlayingCallId(null);
+    setRecordingUrl(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('get-call-recording', {
+        body: { call_id: callId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (!data?.link) throw new Error('No se encontró grabación para esta llamada');
+
+      setRecordingUrl(data.link);
+      setPlayingCallId(callId);
+
+      const audio = new Audio(data.link);
+      audioRef.current = audio;
+      audio.onended = () => {
+        setPlayingCallId(null);
+        setRecordingUrl(null);
+        audioRef.current = null;
+      };
+      audio.onerror = () => {
+        toast({ title: 'Error de audio', description: 'No se pudo reproducir la grabación.', variant: 'destructive' });
+        setPlayingCallId(null);
+        setRecordingUrl(null);
+        audioRef.current = null;
+      };
+      await audio.play();
+    } catch (err: any) {
+      toast({ title: 'Grabación no disponible', description: err.message, variant: 'destructive' });
+      setPlayingCallId(null);
+      setRecordingUrl(null);
+    } finally {
+      setLoadingRecording(null);
+    }
+  };
 
   const kpiCards = [
     { label: 'Total Llamadas', value: String(kpis.total), icon: Phone },
@@ -432,9 +491,10 @@ const Calls = () => {
                     <TableHead className="text-xs">Destino</TableHead>
                     <TableHead className="text-xs">Dirección</TableHead>
                     <TableHead className="text-xs">Estado</TableHead>
-                    <TableHead className="text-xs">Duración</TableHead>
-                    <TableHead className="text-xs">Coste</TableHead>
-                  </TableRow>
+                     <TableHead className="text-xs">Duración</TableHead>
+                     <TableHead className="text-xs">Coste</TableHead>
+                     <TableHead className="text-xs">Grabación</TableHead>
+                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredCalls.map(c => (
@@ -468,6 +528,27 @@ const Calls = () => {
                       </TableCell>
                       <TableCell className="text-xs font-mono">{fmtDurationMmSs(Number(c.duration) || 0)}</TableCell>
                       <TableCell className="text-xs">€{Number(c.cost || 0).toFixed(2)}</TableCell>
+                      <TableCell>
+                        {c.status === 'answered' && Number(c.duration) > 0 ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => handlePlayRecording(c.call_id)}
+                            disabled={loadingRecording === c.call_id}
+                          >
+                            {loadingRecording === c.call_id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                            ) : playingCallId === c.call_id ? (
+                              <Pause className="h-3.5 w-3.5 text-primary" />
+                            ) : (
+                              <Play className="h-3.5 w-3.5 text-muted-foreground" />
+                            )}
+                          </Button>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
