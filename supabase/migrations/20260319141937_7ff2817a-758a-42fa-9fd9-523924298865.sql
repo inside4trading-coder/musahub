@@ -1,0 +1,1 @@
+UPDATE public.deals SET stage = 'En Conversación' WHERE stage = 'Propuesta Enviada';
