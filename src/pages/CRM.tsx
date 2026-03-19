@@ -36,14 +36,14 @@ type DealActivity = {
 const stageColors: Record<string, string> = {
   'Lead': '#9BA3B2',
   'Contactado': '#4ECDC4',
+  'En Conversación': '#8DC63F',
   'Reunión Agendada': '#4ECDC4',
-  'Propuesta Enviada': '#8DC63F',
   'Negociación': '#F59E0B',
   'Cerrado Ganado': '#22C55E',
   'Cerrado Perdido': '#EF4444',
 };
 
-const stages = ['Lead', 'Contactado', 'Reunión Agendada', 'Propuesta Enviada', 'Negociación', 'Cerrado Ganado', 'Cerrado Perdido'];
+const stages = ['Lead', 'Contactado', 'En Conversación', 'Reunión Agendada', 'Negociación', 'Cerrado Ganado', 'Cerrado Perdido'];
 
 const activityTypeLabels: Record<string, string> = {
   'note': '📝 Nota',
