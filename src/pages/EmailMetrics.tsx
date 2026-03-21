@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { RefreshCw, Mail, MousePointerClick, AlertTriangle, ShieldAlert, Eye, CalendarIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,27 @@ type DateRange = '7d' | '30d' | '90d' | 'custom';
 interface DateRangeValue {
   startDate: string;
   endDate: string;
+}
+
+interface ReportData {
+  date: string;
+  requests: number;
+  delivered: number;
+  opens: number;
+  clicks: number;
+  hardBounces: number;
+  softBounces: number;
+  spamReports: number;
+  uniqueOpens?: number;
+  uniqueClicks?: number;
+}
+
+interface EventData {
+  email: string;
+  date: string;
+  subject: string;
+  event: string;
+  tag?: string;
 }
 
 function getDateRange(range: DateRange, customStart?: Date, customEnd?: Date): DateRangeValue {
@@ -51,19 +72,17 @@ const statusBadge: Record<string, { label: string; className: string }> = {
   deferred: { label: 'Diferido', className: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
 };
 
-async function fetchReports(range: DateRange) {
-  const { startDate, endDate } = getDateRange(range);
+async function fetchReports(dateRange: DateRangeValue) {
   const { data, error } = await supabase.functions.invoke('brevo-email-stats', {
-    body: { action: 'reports', startDate, endDate },
+    body: { action: 'reports', startDate: dateRange.startDate, endDate: dateRange.endDate },
   });
   if (error) throw error;
   return (data?.reports ?? []) as ReportData[];
 }
 
-async function fetchEvents(range: DateRange) {
-  const { startDate, endDate } = getDateRange(range);
+async function fetchEvents(dateRange: DateRangeValue) {
   const { data, error } = await supabase.functions.invoke('brevo-email-stats', {
-    body: { action: 'events', startDate, endDate, limit: 100 },
+    body: { action: 'events', startDate: dateRange.startDate, endDate: dateRange.endDate, limit: 100 },
   });
   if (error) throw error;
   return (data?.events ?? []) as EventData[];
@@ -71,14 +90,19 @@ async function fetchEvents(range: DateRange) {
 
 export default function EmailMetrics() {
   const [range, setRange] = useState<DateRange>('30d');
+  const [customStart, setCustomStart] = useState<Date | undefined>();
+  const [customEnd, setCustomEnd] = useState<Date | undefined>();
+
+  const dateRange = getDateRange(range, customStart, customEnd);
 
   const {
     data: reports = [],
     isLoading: loadingReports,
     refetch: refetchReports,
   } = useQuery({
-    queryKey: ['brevo-reports', range],
-    queryFn: () => fetchReports(range),
+    queryKey: ['brevo-reports', dateRange.startDate, dateRange.endDate],
+    queryFn: () => fetchReports(dateRange),
+    enabled: range !== 'custom' || (!!customStart && !!customEnd),
   });
 
   const {
@@ -86,14 +110,31 @@ export default function EmailMetrics() {
     isLoading: loadingEvents,
     refetch: refetchEvents,
   } = useQuery({
-    queryKey: ['brevo-events', range],
-    queryFn: () => fetchEvents(range),
+    queryKey: ['brevo-events', dateRange.startDate, dateRange.endDate],
+    queryFn: () => fetchEvents(dateRange),
+    enabled: range !== 'custom' || (!!customStart && !!customEnd),
   });
 
   const refreshAll = useCallback(() => {
     refetchReports();
     refetchEvents();
   }, [refetchReports, refetchEvents]);
+
+  const handlePresetClick = (preset: '7d' | '30d' | '90d') => {
+    setRange(preset);
+    setCustomStart(undefined);
+    setCustomEnd(undefined);
+  };
+
+  const handleCustomStartSelect = (date: Date | undefined) => {
+    setCustomStart(date);
+    if (date) setRange('custom');
+  };
+
+  const handleCustomEndSelect = (date: Date | undefined) => {
+    setCustomEnd(date);
+    if (date) setRange('custom');
+  };
 
   // Aggregated KPIs
   const totals = reports.reduce(
@@ -149,17 +190,67 @@ export default function EmailMetrics() {
       </div>
 
       {/* Date range filter */}
-      <div className="flex gap-2">
-        {(['7d', '30d', '90d'] as DateRange[]).map((r) => (
+      <div className="flex flex-wrap items-center gap-2">
+        {(['7d', '30d', '90d'] as const).map((r) => (
           <Button
             key={r}
             variant={range === r ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setRange(r)}
+            onClick={() => handlePresetClick(r)}
           >
             {r === '7d' ? '7 días' : r === '30d' ? '30 días' : '90 días'}
           </Button>
         ))}
+
+        <div className="flex items-center gap-1 ml-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={range === 'custom' ? 'default' : 'outline'}
+                size="sm"
+                className="gap-1"
+              >
+                <CalendarIcon className="h-3.5 w-3.5" />
+                {customStart ? format(customStart, 'dd/MM/yyyy') : 'Desde'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={customStart}
+                onSelect={handleCustomStartSelect}
+                disabled={(date) => date > new Date() || (customEnd ? date > customEnd : false)}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+
+          <span className="text-muted-foreground text-sm">—</span>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={range === 'custom' ? 'default' : 'outline'}
+                size="sm"
+                className="gap-1"
+              >
+                <CalendarIcon className="h-3.5 w-3.5" />
+                {customEnd ? format(customEnd, 'dd/MM/yyyy') : 'Hasta'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={customEnd}
+                onSelect={handleCustomEndSelect}
+                disabled={(date) => date > new Date() || (customStart ? date < customStart : false)}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {/* KPI Cards */}
