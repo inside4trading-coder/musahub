@@ -5,37 +5,29 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { RefreshCw, Mail, MousePointerClick, AlertTriangle, ShieldAlert, Eye } from 'lucide-react';
+import { RefreshCw, Mail, MousePointerClick, AlertTriangle, ShieldAlert, Eye, CalendarIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { format, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
-type DateRange = '7d' | '30d' | '90d';
+type DateRange = '7d' | '30d' | '90d' | 'custom';
 
-interface ReportData {
-  date: string;
-  requests: number;
-  delivered: number;
-  opens: number;
-  clicks: number;
-  hardBounces: number;
-  softBounces: number;
-  spamReports: number;
-  uniqueOpens?: number;
-  uniqueClicks?: number;
+interface DateRangeValue {
+  startDate: string;
+  endDate: string;
 }
 
-interface EventData {
-  email: string;
-  date: string;
-  subject: string;
-  event: string;
-  tag?: string;
-}
-
-function getDateRange(range: DateRange) {
+function getDateRange(range: DateRange, customStart?: Date, customEnd?: Date): DateRangeValue {
+  if (range === 'custom' && customStart && customEnd) {
+    return {
+      startDate: format(customStart, 'yyyy-MM-dd'),
+      endDate: format(customEnd, 'yyyy-MM-dd'),
+    };
+  }
   const end = new Date();
   const days = range === '7d' ? 7 : range === '30d' ? 30 : 90;
   const start = subDays(end, days);
