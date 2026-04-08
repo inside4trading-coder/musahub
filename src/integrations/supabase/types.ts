@@ -143,6 +143,7 @@ export type Database = {
       }
       deals: {
         Row: {
+          archived: boolean | null
           assigned_to: string | null
           category: string | null
           company_name: string
@@ -167,6 +168,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          archived?: boolean | null
           assigned_to?: string | null
           category?: string | null
           company_name: string
@@ -191,6 +193,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          archived?: boolean | null
           assigned_to?: string | null
           category?: string | null
           company_name?: string
