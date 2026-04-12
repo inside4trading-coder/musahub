@@ -103,7 +103,7 @@ const Prospecting = () => {
       tiktok: prospect.tiktok || null,
       category: prospect.category || null,
       stage: 'Lead',
-      deal_value: 0,
+      deal_value: 500,
     });
 
     if (!error) {
@@ -148,7 +148,7 @@ const Prospecting = () => {
       tiktok: p.tiktok || null,
       category: p.category || null,
       stage: 'Lead',
-      deal_value: 0,
+      deal_value: 500,
     }));
 
     const { error } = await supabase.from('deals').insert(inserts);
