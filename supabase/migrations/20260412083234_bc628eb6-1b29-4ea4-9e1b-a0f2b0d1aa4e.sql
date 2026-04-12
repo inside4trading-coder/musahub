@@ -1,0 +1,1 @@
+ALTER TABLE public.deals ALTER COLUMN deal_value SET DEFAULT 500;
