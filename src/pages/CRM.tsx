@@ -57,7 +57,7 @@ const activityTypeLabels: Record<string, string> = {
 
 const emptyDeal = {
   company_name: '', contact_name: '', email: '', phone: '',
-  deal_value: 0, stage: 'Lead', notes: '', tags: [] as string[],
+  deal_value: 500, stage: 'Lead', notes: '', tags: [] as string[],
   assigned_to: '' as string, next_step: '', next_step_date: '',
 };
 
