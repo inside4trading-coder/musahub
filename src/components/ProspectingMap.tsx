@@ -31,7 +31,7 @@ interface ProspectingMapProps {
   triggerSearch: number; // increment to trigger
 }
 
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBHz48_s3_ZeQtXAcz58k_6c9hT76XzyUE';
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyDhskCCwV0rsG82j_SEOcEZ8SJnp9M-Rrg';
 
 function loadGoogleMaps(): Promise<void> {
   return new Promise((resolve, reject) => {
