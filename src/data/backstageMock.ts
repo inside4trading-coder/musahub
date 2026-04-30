@@ -1,0 +1,170 @@
+import type { BackstageResponse } from "@/types/backstage";
+
+export const backstageMock: BackstageResponse = {
+  generated_at: "2026-04-30T21:20:00Z",
+  total_workflows: 7,
+  workflows: [
+    {
+      id: "r2d2-telegram-router",
+      name: "R2-D2 — Router Telegram",
+      active: true,
+      triggers: ["telegram"],
+      integrations: ["Telegram"],
+      tags: ["agente", "telegram", "router"],
+      description: "Enruta mensajes de Telegram al agente correcto según la intención detectada.",
+      graph: {
+        nodes: [
+          { id: "1", label: "📨 Mensaje Telegram" },
+          { id: "2", label: "🧠 Clasificar intención" },
+          { id: "3", label: "↪️ Delegar a agente" },
+        ],
+        edges: [
+          { from: "1", to: "2" },
+          { from: "2", to: "3" },
+        ],
+      },
+    },
+    {
+      id: "3po-charts-agent",
+      name: "3-PO — Agente Charts",
+      active: true,
+      triggers: ["telegram"],
+      integrations: ["Telegram", "OpenAI", "chart-img"],
+      tags: ["agente", "telegram", "charts"],
+      description: "Responde consultas de análisis y genera gráficos visuales bajo demanda.",
+      graph: {
+        nodes: [
+          { id: "1", label: "📥 Recibir tarea" },
+          { id: "2", label: "🧠 Procesar OpenAI" },
+          { id: "3", label: "📊 Generar chart" },
+          { id: "4", label: "📤 Enviar Telegram" },
+        ],
+        edges: [
+          { from: "1", to: "2" },
+          { from: "2", to: "3" },
+          { from: "3", to: "4" },
+        ],
+      },
+    },
+    {
+      id: "email-campaign-webhook",
+      name: "Email Campaign",
+      active: true,
+      triggers: ["webhook"],
+      endpoints: [{ path: "/webhook/email-campaign", method: "POST" }],
+      integrations: ["SMTP", "Supabase"],
+      tags: ["email", "marketing", "webhook"],
+      description: "Recibe campañas, personaliza envíos y registra callbacks en Supabase.",
+      graph: {
+        nodes: [
+          { id: "1", label: "🪝 Webhook" },
+          { id: "2", label: "✉️ Personalizar email" },
+          { id: "3", label: "📨 Enviar SMTP" },
+          { id: "4", label: "💾 Guardar callback" },
+        ],
+        edges: [
+          { from: "1", to: "2" },
+          { from: "2", to: "3" },
+          { from: "3", to: "4" },
+        ],
+      },
+    },
+    {
+      id: "delivery-enrichment",
+      name: "Delivery Enrichment",
+      active: true,
+      triggers: ["webhook"],
+      endpoints: [{ path: "/webhook/delivery-enrichment", method: "POST" }],
+      integrations: ["Google Maps", "Supabase"],
+      tags: ["delivery", "scraping", "webhook"],
+      description: "Enriquece direcciones con scraping de Google Maps y devuelve datos útiles.",
+      graph: {
+        nodes: [
+          { id: "1", label: "🪝 Recibir dirección" },
+          { id: "2", label: "🗺️ Buscar Maps" },
+          { id: "3", label: "📍 Extraer datos" },
+          { id: "4", label: "📦 Responder" },
+        ],
+        edges: [
+          { from: "1", to: "2" },
+          { from: "2", to: "3" },
+          { from: "3", to: "4" },
+        ],
+      },
+    },
+    {
+      id: "rss-news-aggregator",
+      name: "RSS News Aggregator",
+      active: true,
+      triggers: ["schedule"],
+      schedule: "Cada 6 horas",
+      integrations: ["RSS", "OpenAI", "Supabase"],
+      tags: ["noticias", "contenido", "schedule"],
+      description: "Lee feeds RSS, filtra keywords, resume contenido y guarda resultados.",
+      graph: {
+        nodes: [
+          { id: "1", label: "⏰ Cron" },
+          { id: "2", label: "📰 Leer feeds" },
+          { id: "3", label: "🔎 Filtrar keywords" },
+          { id: "4", label: "🤖 Resumir" },
+          { id: "5", label: "💾 Guardar" },
+        ],
+        edges: [
+          { from: "1", to: "2" },
+          { from: "2", to: "3" },
+          { from: "3", to: "4" },
+          { from: "4", to: "5" },
+        ],
+      },
+    },
+    {
+      id: "schumann-resonance",
+      name: "Schumann Resonance",
+      active: true,
+      triggers: ["schedule"],
+      schedule: "Diario",
+      integrations: ["HTTP", "OpenAI Vision", "Notion"],
+      tags: ["schumann", "vision", "notion"],
+      description: "Descarga imagen, analiza con Vision y guarda el resultado en Notion.",
+      graph: {
+        nodes: [
+          { id: "1", label: "⏰ Trigger diario" },
+          { id: "2", label: "🖼️ Descargar imagen" },
+          { id: "3", label: "👁️ Analizar visión" },
+          { id: "4", label: "🧾 Parsear JSON" },
+          { id: "5", label: "📝 Actualizar Notion" },
+        ],
+        edges: [
+          { from: "1", to: "2" },
+          { from: "2", to: "3" },
+          { from: "3", to: "4" },
+          { from: "4", to: "5" },
+        ],
+      },
+    },
+    {
+      id: "seo-audit-chat",
+      name: "SEO Audit",
+      active: true,
+      triggers: ["chat"],
+      integrations: ["DataForSEO", "OpenAI", "PDF.co", "Gmail"],
+      tags: ["seo", "audit", "pdf"],
+      description: "Ejecuta una auditoría SEO y genera un PDF entregable por email.",
+      graph: {
+        nodes: [
+          { id: "1", label: "💬 Chat trigger" },
+          { id: "2", label: "🔎 DataForSEO" },
+          { id: "3", label: "🧠 Analizar" },
+          { id: "4", label: "📄 Generar PDF" },
+          { id: "5", label: "📧 Enviar Gmail" },
+        ],
+        edges: [
+          { from: "1", to: "2" },
+          { from: "2", to: "3" },
+          { from: "3", to: "4" },
+          { from: "4", to: "5" },
+        ],
+      },
+    },
+  ],
+};
