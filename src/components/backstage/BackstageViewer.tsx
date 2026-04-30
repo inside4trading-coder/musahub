@@ -188,7 +188,7 @@ export const BackstageViewer = () => {
               <p className="mt-1 max-w-md text-sm text-muted-foreground">
                 Ningún workflow activo coincide con los filtros aplicados.
               </p>
-              {(query || selectedTriggers.length || selectedIntegrations.length) > 0 && (
+              {(query.length > 0 || selectedTriggers.length > 0 || selectedIntegrations.length > 0) && (
                 <Button onClick={clearFilters} variant="outline" size="sm" className="mt-4">
                   Limpiar filtros
                 </Button>
