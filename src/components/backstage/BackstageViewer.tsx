@@ -163,70 +163,82 @@ export const BackstageViewer = () => {
       </header>
 
       {/* Body */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="lg:sticky lg:top-6 lg:self-start">
-          {loading ? (
-            <Skeleton className="h-64 rounded-2xl" />
-          ) : (
-            <WorkflowFilters
-              query={query}
-              onQueryChange={setQuery}
-              triggers={allTriggers}
-              selectedTriggers={selectedTriggers}
-              onToggleTrigger={(t) => toggle(selectedTriggers, setSelectedTriggers, t)}
-              integrations={allIntegrations}
-              selectedIntegrations={selectedIntegrations}
-              onToggleIntegration={(i) =>
-                toggle(selectedIntegrations, setSelectedIntegrations, i)
-              }
-              onClear={clearFilters}
-            />
-          )}
-        </aside>
-
-        <section>
-          {loading ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-44 rounded-2xl" />
-              ))}
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-destructive/30 bg-destructive/5 p-12 text-center">
-              <AlertCircle className="mb-3 h-8 w-8 text-destructive" />
-              <h3 className="text-base font-semibold text-foreground">No pudimos cargar el backstage</h3>
-              <p className="mt-1 max-w-md text-sm text-muted-foreground">{error}</p>
-              <Button onClick={refetch} variant="outline" size="sm" className="mt-4">
-                <RefreshCw className="mr-2 h-3.5 w-3.5" />
-                Reintentar
-              </Button>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/30 p-12 text-center">
-              <Inbox className="mb-3 h-8 w-8 text-muted-foreground" />
-              <h3 className="text-base font-semibold text-foreground">Sin resultados</h3>
-              <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                Ningún workflow activo coincide con los filtros aplicados.
-              </p>
-              {(query.length > 0 || selectedTriggers.length > 0 || selectedIntegrations.length > 0) && (
-                <Button onClick={clearFilters} variant="outline" size="sm" className="mt-4">
-                  Limpiar filtros
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((wf) => (
-                <WorkflowCard
-                  key={wf.id}
-                  workflow={wf}
-                  selected={selected?.id === wf.id && panelOpen}
-                  onClick={() => handleSelect(wf)}
+      <div
+        key={view}
+        className="transition-all duration-300 animate-in fade-in zoom-in-95"
+      >
+        {view === "3d" && !loading && !error ? (
+          <BackstageScene3D
+            workflows={filtered.length > 0 ? filtered : activeWorkflows}
+            onExit={() => setView("grid")}
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
+            <aside className="lg:sticky lg:top-6 lg:self-start">
+              {loading ? (
+                <Skeleton className="h-64 rounded-2xl" />
+              ) : (
+                <WorkflowFilters
+                  query={query}
+                  onQueryChange={setQuery}
+                  triggers={allTriggers}
+                  selectedTriggers={selectedTriggers}
+                  onToggleTrigger={(t) => toggle(selectedTriggers, setSelectedTriggers, t)}
+                  integrations={allIntegrations}
+                  selectedIntegrations={selectedIntegrations}
+                  onToggleIntegration={(i) =>
+                    toggle(selectedIntegrations, setSelectedIntegrations, i)
+                  }
+                  onClear={clearFilters}
                 />
-              ))}
-            </div>
-          )}
-        </section>
+              )}
+            </aside>
+
+            <section>
+              {loading ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="h-44 rounded-2xl" />
+                  ))}
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-destructive/30 bg-destructive/5 p-12 text-center">
+                  <AlertCircle className="mb-3 h-8 w-8 text-destructive" />
+                  <h3 className="text-base font-semibold text-foreground">No pudimos cargar el backstage</h3>
+                  <p className="mt-1 max-w-md text-sm text-muted-foreground">{error}</p>
+                  <Button onClick={refetch} variant="outline" size="sm" className="mt-4">
+                    <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                    Reintentar
+                  </Button>
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/30 p-12 text-center">
+                  <Inbox className="mb-3 h-8 w-8 text-muted-foreground" />
+                  <h3 className="text-base font-semibold text-foreground">Sin resultados</h3>
+                  <p className="mt-1 max-w-md text-sm text-muted-foreground">
+                    Ningún workflow activo coincide con los filtros aplicados.
+                  </p>
+                  {(query.length > 0 || selectedTriggers.length > 0 || selectedIntegrations.length > 0) && (
+                    <Button onClick={clearFilters} variant="outline" size="sm" className="mt-4">
+                      Limpiar filtros
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {filtered.map((wf) => (
+                    <WorkflowCard
+                      key={wf.id}
+                      workflow={wf}
+                      selected={selected?.id === wf.id && panelOpen}
+                      onClick={() => handleSelect(wf)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        )}
       </div>
 
       <WorkflowDetailPanel
