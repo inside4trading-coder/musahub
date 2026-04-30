@@ -136,6 +136,24 @@ export const BackstageViewer = () => {
                 Datos mock
               </span>
             )}
+            <Button
+              size="sm"
+              variant={view === "3d" ? "default" : "outline"}
+              onClick={() => setView((v) => (v === "grid" ? "3d" : "grid"))}
+              className="h-7 px-2.5 text-xs"
+            >
+              {view === "grid" ? (
+                <>
+                  <Sparkles className="mr-1 h-3 w-3" />
+                  Vista 3D
+                </>
+              ) : (
+                <>
+                  <LayoutGrid className="mr-1 h-3 w-3" />
+                  Vista Grid
+                </>
+              )}
+            </Button>
             <Button size="sm" variant="ghost" onClick={refetch} className="h-7 px-2 text-xs">
               <RefreshCw className="mr-1 h-3 w-3" />
               Refrescar
