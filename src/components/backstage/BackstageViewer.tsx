@@ -28,6 +28,7 @@ export const BackstageViewer = () => {
   const [selectedIntegrations, setSelectedIntegrations] = useState<string[]>([]);
   const [selected, setSelected] = useState<BackstageWorkflow | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [view, setView] = useState<"grid" | "3d">("grid");
 
   const activeWorkflows = useMemo(
     () => data?.workflows.filter((w) => w.active) ?? [],
