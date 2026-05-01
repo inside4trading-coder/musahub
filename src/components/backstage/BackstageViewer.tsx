@@ -1,13 +1,17 @@
 import { useMemo, useState } from "react";
-import { AlertCircle, Inbox, LayoutGrid, RefreshCw, Sparkles, Workflow } from "lucide-react";
+import { AlertCircle, Inbox, LayoutGrid, RefreshCw, Workflow } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useBackstageData } from "@/hooks/useBackstageData";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { BackstageWorkflow } from "@/types/backstage";
 import { WorkflowCard } from "./WorkflowCard";
 import { WorkflowFilters } from "./WorkflowFilters";
 import { WorkflowDetailPanel } from "./WorkflowDetailPanel";
 import { BackstageScene3D } from "./BackstageScene3D";
+import { ControlRoomScene3D } from "./ControlRoomScene3D";
+
+type ViewMode = "grid" | "orbit" | "controlroom";
 
 const formatDate = (iso: string) => {
   try {
