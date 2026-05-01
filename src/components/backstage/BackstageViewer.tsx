@@ -32,7 +32,9 @@ export const BackstageViewer = () => {
   const [selectedIntegrations, setSelectedIntegrations] = useState<string[]>([]);
   const [selected, setSelected] = useState<BackstageWorkflow | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [view, setView] = useState<"grid" | "3d">("3d");
+  const isMobile = useIsMobile();
+  const [view, setView] = useState<ViewMode>("controlroom");
+  const effectiveView: ViewMode = isMobile ? "grid" : view;
 
   const activeWorkflows = useMemo(
     () => data?.workflows.filter((w) => w.active) ?? [],
