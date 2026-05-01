@@ -181,12 +181,25 @@ export const BackstageViewer = () => {
         </div>
       </header>
 
-      {/* Body */}
+      {/* Mobile notice */}
+      {isMobile && view !== "grid" && (
+        <div className="rounded-xl border border-dashed border-border bg-muted/40 p-4 text-center text-xs text-muted-foreground">
+          Vista 3D disponible en escritorio
+        </div>
+      )}
+
+      {/* Body with 400ms fade transition */}
       <div
-        key={view}
-        className="transition-all duration-300 animate-in fade-in zoom-in-95"
+        key={effectiveView}
+        className="transition-opacity duration-[400ms] animate-in fade-in"
       >
-        {view === "3d" && !loading && !error ? (
+        {effectiveView === "controlroom" && !loading && !error ? (
+          <ControlRoomScene3D
+            workflows={filtered.length > 0 ? filtered : activeWorkflows}
+            onExit={() => setView("grid")}
+            onSelectWorkflow={(wf) => { setSelected(wf); }}
+          />
+        ) : effectiveView === "orbit" && !loading && !error ? (
           <BackstageScene3D
             workflows={filtered.length > 0 ? filtered : activeWorkflows}
             onExit={() => setView("grid")}
