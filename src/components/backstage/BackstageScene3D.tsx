@@ -129,10 +129,12 @@ const Particles = () => {
   );
 };
 
-type AgentNodeProps = {
-  item: PositionedWorkflow;
-  selected: boolean;
-  onSelect: (wf: BackstageWorkflow) => void;
+const TRIGGER_ICON: Record<TriggerKind, string> = {
+  telegram: "✈",
+  webhook: "⚡",
+  schedule: "⏱",
+  chat: "💬",
+  manual: "✋",
 };
 
 const AgentNode = ({ item, selected, onSelect }: AgentNodeProps) => {
@@ -141,12 +143,40 @@ const AgentNode = ({ item, selected, onSelect }: AgentNodeProps) => {
   const phongRef = useRef<THREE.MeshPhongMaterial>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
+  const heartbeatRingRef = useRef<THREE.Mesh>(null);
   const baseY = item.position[1];
   const style = TRIGGER_STYLE[item.trigger];
   const phaseOffset = useMemo(() => Math.random() * Math.PI * 2, []);
 
+  // Heartbeat: timer aleatorio que simula ejecución reciente del workflow
+  const heartbeatStart = useRef<number>(-Infinity);
+  const [beating, setBeating] = useState(false);
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const scheduleNext = () => {
+      // entre 4s y 14s aleatorio
+      const delay = 4000 + Math.random() * 10000;
+      timeoutId = setTimeout(() => {
+        heartbeatStart.current = performance.now() / 1000;
+        setBeating(true);
+        // duración del latido visible ~1.4s
+        setTimeout(() => setBeating(false), 1400);
+        scheduleNext();
+      }, delay);
+    };
+    scheduleNext();
+    return () => clearTimeout(timeoutId);
+  }, []);
+
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
+    const hbElapsed = t - heartbeatStart.current;
+    const hbActive = hbElapsed >= 0 && hbElapsed < 1.4;
+    // Curva doble pico (lub-dub)
+    const heartbeatPulse = hbActive
+      ? Math.exp(-hbElapsed * 4) * Math.abs(Math.sin(hbElapsed * 14)) * 0.45
+      : 0;
 
     if (groupRef.current) {
       groupRef.current.position.y = baseY + Math.sin(t * 0.6 + phaseOffset) * 0.15;
@@ -174,21 +204,25 @@ const AgentNode = ({ item, selected, onSelect }: AgentNodeProps) => {
         default:
           pulse = 1 + Math.abs(Math.sin(t * 1.5 + phaseOffset)) * 0.035;
       }
-      meshRef.current.scale.setScalar(pulse);
+      meshRef.current.scale.setScalar(pulse + heartbeatPulse);
     }
 
     if (phongRef.current) {
       const baseEm = selected ? 0.95 : 0.55;
+      let em = baseEm + Math.sin(t + phaseOffset) * 0.05;
       if (style.idle === "flash") {
-        phongRef.current.emissiveIntensity = 0.4 + Math.abs(Math.sin(t * 2)) * 0.6;
-      } else {
-        phongRef.current.emissiveIntensity = baseEm + Math.sin(t + phaseOffset) * 0.05;
+        em = 0.4 + Math.abs(Math.sin(t * 2)) * 0.6;
       }
+      // Boost durante heartbeat
+      em += heartbeatPulse * 2.2;
+      phongRef.current.emissiveIntensity = em;
     }
 
     if (glowRef.current) {
-      const s = 1.45 + Math.sin(t * 1.2 + phaseOffset) * 0.06;
+      const s = 1.45 + Math.sin(t * 1.2 + phaseOffset) * 0.06 + heartbeatPulse * 0.6;
       glowRef.current.scale.setScalar(s);
+      const mat = glowRef.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.12 + heartbeatPulse * 0.5;
     }
 
     if (ringRef.current && style.idle === "rings") {
@@ -196,6 +230,20 @@ const AgentNode = ({ item, selected, onSelect }: AgentNodeProps) => {
       ringRef.current.scale.setScalar(s);
       const mat = ringRef.current.material as THREE.MeshBasicMaterial;
       mat.opacity = 0.4 * (1 - ((t * 0.6) % 1));
+    }
+
+    // Onda expansiva del heartbeat
+    if (heartbeatRingRef.current) {
+      if (hbActive) {
+        const progress = hbElapsed / 1.4;
+        const s = 1 + progress * 3.5;
+        heartbeatRingRef.current.scale.setScalar(s);
+        const mat = heartbeatRingRef.current.material as THREE.MeshBasicMaterial;
+        mat.opacity = 0.7 * (1 - progress);
+        heartbeatRingRef.current.visible = true;
+      } else {
+        heartbeatRingRef.current.visible = false;
+      }
     }
   });
 
@@ -206,6 +254,12 @@ const AgentNode = ({ item, selected, onSelect }: AgentNodeProps) => {
 
   return (
     <group ref={groupRef} position={item.position}>
+      {/* Onda expansiva del heartbeat */}
+      <mesh ref={heartbeatRingRef} rotation={[Math.PI / 2, 0, 0]} visible={false}>
+        <ringGeometry args={[style.radius * 1.1, style.radius * 1.25, 64]} />
+        <meshBasicMaterial color={style.color} transparent opacity={0.7} side={THREE.DoubleSide} />
+      </mesh>
+
       {/* Glow exterior */}
       <mesh ref={glowRef}>
         <sphereGeometry args={[style.radius, 24, 24]} />
@@ -260,9 +314,11 @@ const AgentNode = ({ item, selected, onSelect }: AgentNodeProps) => {
       >
         <div
           style={{
-            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 4,
             whiteSpace: "nowrap",
-            textShadow: "0 1px 8px rgba(0,0,0,0.9), 0 0 14px rgba(0,0,0,0.7)",
           }}
         >
           <div
@@ -271,22 +327,34 @@ const AgentNode = ({ item, selected, onSelect }: AgentNodeProps) => {
               fontSize: 12,
               fontWeight: 600,
               letterSpacing: 0.2,
+              textShadow: "0 1px 8px rgba(0,0,0,0.9), 0 0 14px rgba(0,0,0,0.7)",
             }}
           >
             {item.workflow.name}
           </div>
+          {/* Mini-badge pill flotante con trigger */}
           <div
             style={{
-              marginTop: 2,
-              color: `${style.color}`,
-              fontSize: 9.5,
-              fontWeight: 500,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "2px 7px",
+              borderRadius: 999,
+              background: `${style.color}26`,
+              border: `1px solid ${style.color}66`,
+              color: "#fff",
+              fontSize: 9,
+              fontWeight: 600,
               textTransform: "uppercase",
-              letterSpacing: 1.2,
-              opacity: 0.9,
+              letterSpacing: 0.8,
+              backdropFilter: "blur(4px)",
+              WebkitBackdropFilter: "blur(4px)",
+              boxShadow: beating ? `0 0 12px ${style.color}aa` : "none",
+              transition: "box-shadow 0.3s ease",
             }}
           >
-            {item.workflow.triggers[0]}
+            <span style={{ fontSize: 9, opacity: 0.9 }}>{TRIGGER_ICON[item.trigger]}</span>
+            <span>{item.workflow.triggers[0]}</span>
           </div>
         </div>
       </Html>
