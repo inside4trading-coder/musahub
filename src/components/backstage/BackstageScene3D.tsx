@@ -1,6 +1,7 @@
 import { Suspense, useMemo, useRef, useState, useEffect } from "react";
 import { Canvas, useFrame, ThreeEvent } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Html, Line } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, Html } from "@react-three/drei";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import { X } from "lucide-react";
 import type { BackstageWorkflow } from "@/types/backstage";
@@ -80,28 +81,51 @@ const computeLayout = (workflows: BackstageWorkflow[]): PositionedWorkflow[] => 
 };
 
 const Particles = () => {
-  const positions = useMemo(() => {
-    const arr = new Float32Array(200 * 3);
-    for (let i = 0; i < 200; i++) {
-      arr[i * 3] = (Math.random() - 0.5) * 30;
+  const starPositions = useMemo(() => {
+    const arr = new Float32Array(300 * 3);
+    for (let i = 0; i < 300; i++) {
+      arr[i * 3] = (Math.random() - 0.5) * 50;
+      arr[i * 3 + 1] = (Math.random() - 0.5) * 30;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * 50;
+    }
+    return arr;
+  }, []);
+
+  const dustPositions = useMemo(() => {
+    const arr = new Float32Array(120 * 3);
+    for (let i = 0; i < 120; i++) {
+      arr[i * 3] = (Math.random() - 0.5) * 35;
       arr[i * 3 + 1] = (Math.random() - 0.5) * 20;
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 30;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * 35;
     }
     return arr;
   }, []);
 
   return (
-    <points>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          array={positions}
-          count={200}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <pointsMaterial size={0.04} color="#4f98a3" transparent opacity={0.6} />
-    </points>
+    <>
+      <points>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            array={starPositions}
+            count={300}
+            itemSize={3}
+          />
+        </bufferGeometry>
+        <pointsMaterial size={0.025} color="#ffffff" transparent opacity={0.85} sizeAttenuation />
+      </points>
+      <points>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            array={dustPositions}
+            count={120}
+            itemSize={3}
+          />
+        </bufferGeometry>
+        <pointsMaterial size={0.08} color="#4f98a3" transparent opacity={0.35} sizeAttenuation />
+      </points>
+    </>
   );
 };
 
@@ -109,60 +133,69 @@ type AgentNodeProps = {
   item: PositionedWorkflow;
   selected: boolean;
   onSelect: (wf: BackstageWorkflow) => void;
-  offset: number;
 };
 
-const AgentNode = ({ item, selected, onSelect, offset }: AgentNodeProps) => {
+const AgentNode = ({ item, selected, onSelect }: AgentNodeProps) => {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
-  const matRef = useRef<THREE.MeshStandardMaterial>(null);
+  const phongRef = useRef<THREE.MeshPhongMaterial>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
   const baseY = item.position[1];
   const style = TRIGGER_STYLE[item.trigger];
+  const phaseOffset = useMemo(() => Math.random() * Math.PI * 2, []);
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
+
     if (groupRef.current) {
-      groupRef.current.position.y = baseY + Math.sin(t * 0.5 + offset) * 0.12;
+      groupRef.current.position.y = baseY + Math.sin(t * 0.6 + phaseOffset) * 0.15;
+      const targetScale = selected ? 1.3 : 1;
+      const cur = groupRef.current.scale.x;
+      groupRef.current.scale.setScalar(cur + (targetScale - cur) * 0.1);
     }
+
     if (meshRef.current) {
-      switch (style.idle) {
-        case "pulse":
-          meshRef.current.scale.setScalar(1 + Math.sin(t * 3) * 0.05);
+      meshRef.current.rotation.y += 0.003;
+      let pulse = 1;
+      switch (item.trigger) {
+        case "telegram":
+          pulse = 1 + Math.sin(t * 2.5 + phaseOffset) * 0.04;
           break;
-        case "breathe":
-          meshRef.current.scale.setScalar(1 + Math.sin(t * 0.8) * 0.04);
+        case "schedule":
+          pulse = 1 + Math.sin(t * 0.7 + phaseOffset) * 0.03;
           break;
-        case "spin":
-          meshRef.current.rotation.y += 0.005;
+        case "webhook":
+          pulse = 1 + Math.abs(Math.sin(t * 2 + phaseOffset)) * 0.05;
           break;
-        case "rings":
-          meshRef.current.rotation.y += 0.008;
+        case "chat":
+          pulse = 1 + Math.sin(t * 1.2 + phaseOffset) * 0.04;
           break;
+        default:
+          pulse = 1 + Math.abs(Math.sin(t * 1.5 + phaseOffset)) * 0.035;
       }
+      meshRef.current.scale.setScalar(pulse);
     }
-    if (matRef.current) {
-      const baseEm = selected ? 1.2 : 0.4;
+
+    if (phongRef.current) {
+      const baseEm = selected ? 0.95 : 0.55;
       if (style.idle === "flash") {
-        matRef.current.emissiveIntensity = 0.3 + Math.abs(Math.sin(t * 2)) * 0.7;
+        phongRef.current.emissiveIntensity = 0.4 + Math.abs(Math.sin(t * 2)) * 0.6;
       } else {
-        matRef.current.emissiveIntensity = baseEm;
+        phongRef.current.emissiveIntensity = baseEm + Math.sin(t + phaseOffset) * 0.05;
       }
     }
+
+    if (glowRef.current) {
+      const s = 1.45 + Math.sin(t * 1.2 + phaseOffset) * 0.06;
+      glowRef.current.scale.setScalar(s);
+    }
+
     if (ringRef.current && style.idle === "rings") {
       const s = 1.4 + ((t * 0.6) % 1) * 0.8;
       ringRef.current.scale.setScalar(s);
       const mat = ringRef.current.material as THREE.MeshBasicMaterial;
       mat.opacity = 0.4 * (1 - ((t * 0.6) % 1));
-    }
-  });
-
-  const targetScale = selected ? 1.3 : 1;
-  useFrame(() => {
-    if (groupRef.current) {
-      const cur = groupRef.current.scale.x;
-      const next = cur + (targetScale - cur) * 0.1;
-      groupRef.current.scale.setScalar(next);
     }
   });
 
@@ -173,26 +206,34 @@ const AgentNode = ({ item, selected, onSelect, offset }: AgentNodeProps) => {
 
   return (
     <group ref={groupRef} position={item.position}>
+      {/* Glow exterior */}
+      <mesh ref={glowRef}>
+        <sphereGeometry args={[style.radius, 24, 24]} />
+        <meshBasicMaterial color={style.color} transparent opacity={0.12} />
+      </mesh>
+
+      {/* Esfera principal con Phong */}
       <mesh
         ref={meshRef}
         onClick={handleClick}
         onPointerOver={() => (document.body.style.cursor = "pointer")}
         onPointerOut={() => (document.body.style.cursor = "default")}
       >
-        <sphereGeometry args={[style.radius, 32, 32]} />
-        <meshStandardMaterial
-          ref={matRef}
+        <sphereGeometry args={[style.radius, 48, 48]} />
+        <meshPhongMaterial
+          ref={phongRef}
           color={style.color}
           emissive={style.color}
-          emissiveIntensity={selected ? 1.2 : 0.4}
-          roughness={0.3}
-          metalness={0.6}
+          emissiveIntensity={selected ? 0.95 : 0.55}
+          specular={"#ffffff"}
+          shininess={80}
         />
       </mesh>
 
-      <mesh scale={1.08}>
-        <sphereGeometry args={[style.radius, 16, 16]} />
-        <meshBasicMaterial color={style.color} wireframe opacity={0.15} transparent />
+      {/* Wireframe técnico sutil */}
+      <mesh scale={1.04}>
+        <sphereGeometry args={[style.radius, 16, 12]} />
+        <meshBasicMaterial color={style.color} wireframe transparent opacity={0.1} />
       </mesh>
 
       {style.idle === "rings" && (
@@ -212,25 +253,41 @@ const AgentNode = ({ item, selected, onSelect, offset }: AgentNodeProps) => {
       ))}
 
       <Html
-        position={[0, style.radius + 0.55, 0]}
+        position={[0, style.radius + 0.65, 0]}
         center
         distanceFactor={10}
         style={{ pointerEvents: "none", userSelect: "none" }}
       >
         <div
           style={{
-            padding: "3px 8px",
-            borderRadius: 6,
-            background: "rgba(13,13,15,0.75)",
-            color: "#fff",
-            fontSize: 11,
-            fontWeight: 600,
+            textAlign: "center",
             whiteSpace: "nowrap",
-            border: `1px solid ${style.color}66`,
-            backdropFilter: "blur(4px)",
+            textShadow: "0 1px 8px rgba(0,0,0,0.9), 0 0 14px rgba(0,0,0,0.7)",
           }}
         >
-          {item.workflow.name}
+          <div
+            style={{
+              color: "#ffffff",
+              fontSize: 12,
+              fontWeight: 600,
+              letterSpacing: 0.2,
+            }}
+          >
+            {item.workflow.name}
+          </div>
+          <div
+            style={{
+              marginTop: 2,
+              color: `${style.color}`,
+              fontSize: 9.5,
+              fontWeight: 500,
+              textTransform: "uppercase",
+              letterSpacing: 1.2,
+              opacity: 0.9,
+            }}
+          >
+            {item.workflow.triggers[0]}
+          </div>
         </div>
       </Html>
     </group>
@@ -246,27 +303,80 @@ const Satellite = ({
   total: number;
   color: string;
 }) => {
-  const ref = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
   const speed = 0.4 + (index % 3) * 0.15;
   useFrame(({ clock }) => {
-    if (!ref.current) return;
+    if (!groupRef.current) return;
     const angle = (index / total) * Math.PI * 2 + clock.elapsedTime * speed;
     const r = 1.1;
-    ref.current.position.x = Math.cos(angle) * r;
-    ref.current.position.z = Math.sin(angle) * r;
-    ref.current.position.y = 0.1;
+    groupRef.current.position.x = Math.cos(angle) * r;
+    groupRef.current.position.z = Math.sin(angle) * r;
+    groupRef.current.position.y = 0.1;
   });
   return (
-    <mesh ref={ref}>
-      <sphereGeometry args={[0.09, 12, 12]} />
-      <meshStandardMaterial
-        color={color}
-        emissive={color}
-        emissiveIntensity={0.8}
-        roughness={0.4}
-      />
-    </mesh>
+    <group ref={groupRef}>
+      <mesh>
+        <sphereGeometry args={[0.07, 14, 14]} />
+        <meshPhongMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={1}
+          shininess={60}
+        />
+      </mesh>
+      <mesh scale={1.8}>
+        <sphereGeometry args={[0.07, 12, 12]} />
+        <meshBasicMaterial color={color} transparent opacity={0.18} />
+      </mesh>
+    </group>
   );
+};
+
+const AnimatedBeam = ({
+  start,
+  end,
+  color,
+}: {
+  start: [number, number, number];
+  end: [number, number, number];
+  color: string;
+}) => {
+  const ref = useRef<THREE.Line>(null);
+
+  const geometry = useMemo(() => {
+    const points = [new THREE.Vector3(...start), new THREE.Vector3(...end)];
+    const g = new THREE.BufferGeometry().setFromPoints(points);
+    return g;
+  }, [start, end]);
+
+  const material = useMemo(
+    () =>
+      new THREE.LineDashedMaterial({
+        color,
+        dashSize: 0.3,
+        gapSize: 0.15,
+        transparent: true,
+        opacity: 0.35,
+        linewidth: 1,
+      }),
+    [color],
+  );
+
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.computeLineDistances();
+    }
+  }, [geometry]);
+
+  useFrame(({ clock }) => {
+    if (ref.current) {
+      const mat = ref.current.material as THREE.LineDashedMaterial & { dashOffset?: number };
+      // @ts-expect-error dashOffset exists on LineDashedMaterial at runtime
+      mat.dashOffset = -clock.elapsedTime * 0.4;
+    }
+  });
+
+  return <primitive object={new THREE.Line(geometry, material)} ref={ref} />;
 };
 
 const Connections = ({ items }: { items: PositionedWorkflow[] }) => {
@@ -292,14 +402,7 @@ const Connections = ({ items }: { items: PositionedWorkflow[] }) => {
   return (
     <>
       {lines.map((l, i) => (
-        <Line
-          key={i}
-          points={[l.a, l.b]}
-          color={l.color}
-          lineWidth={0.8}
-          transparent
-          opacity={0.3}
-        />
+        <AnimatedBeam key={i} start={l.a} end={l.b} color={l.color} />
       ))}
     </>
   );
@@ -326,9 +429,7 @@ export const BackstageScene3D = ({ workflows, onExit }: Props) => {
   if (isMobile) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/30 p-12 text-center">
-        <p className="text-sm text-muted-foreground">
-          Vista 3D disponible en escritorio.
-        </p>
+        <p className="text-sm text-muted-foreground">Vista 3D disponible en escritorio.</p>
         <button
           onClick={onExit}
           className="mt-4 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"
@@ -339,14 +440,16 @@ export const BackstageScene3D = ({ workflows, onExit }: Props) => {
     );
   }
 
+  const selectedColor = selected ? TRIGGER_STYLE[primaryTrigger(selected)].color : "#4f98a3";
+
   return (
     <div
       className="relative w-full overflow-hidden rounded-2xl border border-border"
-      style={{ height: "calc(100vh - 240px)", minHeight: 520, background: "#0d0d0f" }}
+      style={{ height: "calc(100vh - 240px)", minHeight: 520, background: "#07080d" }}
     >
       <Canvas dpr={[1, 1.75]} gl={{ antialias: true, alpha: false }}>
-        <color attach="background" args={["#0d0d0f"]} />
-        <fog attach="fog" args={["#0d0d0f", 14, 28]} />
+        <color attach="background" args={["#07080d"]} />
+        <fog attach="fog" args={["#07080d", 12, 32]} />
 
         <PerspectiveCamera makeDefault position={[0, 3, 10]} fov={60} />
         <OrbitControls
@@ -355,38 +458,48 @@ export const BackstageScene3D = ({ workflows, onExit }: Props) => {
           minDistance={4}
           maxDistance={18}
           autoRotate={!selected}
-          autoRotateSpeed={0.4}
+          autoRotateSpeed={0.35}
           dampingFactor={0.08}
           enableDamping
         />
 
-        <ambientLight intensity={0.15} />
-        <pointLight position={[0, 8, 0]} intensity={0.8} color="#ffffff" />
-        <pointLight position={[-6, -2, -4]} intensity={0.4} color="#4f98a3" />
-        <pointLight position={[6, -2, 4]} intensity={0.3} color="#a86fdf" />
+        <ambientLight intensity={0.25} color="#1a2440" />
+        <pointLight position={[0, 8, 0]} intensity={0.7} color="#ffffff" />
+        <pointLight position={[-7, -2, -5]} intensity={0.6} color="#4f98a3" />
+        <pointLight position={[7, -2, 5]} intensity={0.5} color="#a86fdf" />
+        <pointLight position={[0, -6, 0]} intensity={0.25} color="#e8af34" />
 
         <Suspense fallback={null}>
           <Particles />
           <Connections items={items} />
-          {items.map((it, i) => (
+          {items.map((it) => (
             <AgentNode
               key={it.workflow.id}
               item={it}
               selected={selected?.id === it.workflow.id}
               onSelect={setSelected}
-              offset={i * 0.7}
             />
           ))}
+
+          <EffectComposer>
+            <Bloom
+              intensity={0.85}
+              luminanceThreshold={0.3}
+              luminanceSmoothing={0.6}
+              radius={0.4}
+            />
+          </EffectComposer>
         </Suspense>
       </Canvas>
 
-      <div className="pointer-events-none absolute left-4 top-4 rounded-md border border-border/50 bg-background/40 px-3 py-1.5 text-[11px] text-muted-foreground backdrop-blur">
+      <div className="pointer-events-none absolute left-4 top-4 rounded-md border border-border/40 bg-background/30 px-3 py-1.5 text-[11px] text-muted-foreground backdrop-blur">
         Arrastra para orbitar · Scroll para zoom · Click en un agente
       </div>
 
       {selected && (
         <AgentDetailPanel
           workflow={selected}
+          accentColor={selectedColor}
           onClose={() => setSelected(null)}
         />
       )}
@@ -396,34 +509,59 @@ export const BackstageScene3D = ({ workflows, onExit }: Props) => {
 
 const AgentDetailPanel = ({
   workflow,
+  accentColor,
   onClose,
 }: {
   workflow: BackstageWorkflow;
+  accentColor: string;
   onClose: () => void;
 }) => {
   return (
-    <div className="absolute right-4 top-4 z-10 w-[360px] max-w-[92vw] overflow-hidden rounded-2xl border border-border bg-background/95 shadow-2xl backdrop-blur-xl animate-in slide-in-from-right-4 fade-in">
-      <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
+    <div
+      className="absolute z-10 overflow-hidden animate-in slide-in-from-right-4 fade-in"
+      style={{
+        top: "16px",
+        right: "16px",
+        width: "320px",
+        maxWidth: "92vw",
+        background: "rgba(13, 14, 18, 0.85)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        border: `1px solid ${accentColor}33`,
+        borderRadius: "12px",
+        color: "white",
+        fontFamily: '"Satoshi", "Inter", sans-serif',
+        boxShadow: `0 0 40px ${accentColor}22, 0 8px 32px rgba(0,0,0,0.6)`,
+        transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+    >
+      <div
+        className="flex items-start justify-between gap-3 px-5 pt-5 pb-3"
+        style={{ borderBottom: `1px solid ${accentColor}22` }}
+      >
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold text-foreground">{workflow.name}</h3>
-          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{workflow.id}</p>
+          <h3 className="truncate text-sm font-semibold text-white">{workflow.name}</h3>
+          <p className="mt-0.5 truncate text-[11px] text-white/50">{workflow.id}</p>
         </div>
         <button
           onClick={onClose}
-          className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="rounded-md p-1 text-white/60 hover:bg-white/10 hover:text-white"
           aria-label="Cerrar"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="max-h-[60vh] space-y-4 overflow-y-auto px-4 py-4">
+      <div className="max-h-[60vh] space-y-4 overflow-y-auto px-5 py-4">
         {workflow.description && (
-          <p className="text-xs leading-relaxed text-foreground/80">{workflow.description}</p>
+          <p className="text-xs leading-relaxed text-white/80">{workflow.description}</p>
         )}
 
         <div>
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <p
+            className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider"
+            style={{ color: `${accentColor}cc` }}
+          >
             Triggers
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -435,15 +573,21 @@ const AgentDetailPanel = ({
 
         {workflow.schedule && (
           <div>
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <p
+              className="mb-1 text-[10px] font-semibold uppercase tracking-wider"
+              style={{ color: `${accentColor}cc` }}
+            >
               Schedule
             </p>
-            <p className="text-xs text-foreground/90">{workflow.schedule}</p>
+            <p className="text-xs text-white/90">{workflow.schedule}</p>
           </div>
         )}
 
         <div>
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <p
+            className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider"
+            style={{ color: `${accentColor}cc` }}
+          >
             Integraciones
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -455,25 +599,29 @@ const AgentDetailPanel = ({
 
         {workflow.endpoints && workflow.endpoints.length > 0 && (
           <div>
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <p
+              className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider"
+              style={{ color: `${accentColor}cc` }}
+            >
               Endpoints
             </p>
             <ul className="space-y-1">
               {workflow.endpoints.map((e) => (
                 <li
                   key={`${e.method}-${e.path}`}
-                  className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-2 py-1 font-mono text-[11px]"
+                  className="flex items-center gap-2 rounded-md px-2 py-1 font-mono text-[11px]"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}
                 >
                   <span
                     className="rounded px-1 py-0.5 text-[9px] font-bold"
-                    style={{
-                      background: "hsl(var(--secondary) / 0.15)",
-                      color: "hsl(var(--secondary))",
-                    }}
+                    style={{ background: `${accentColor}26`, color: accentColor }}
                   >
                     {e.method}
                   </span>
-                  <span className="text-foreground/80">{e.path}</span>
+                  <span className="text-white/80">{e.path}</span>
                 </li>
               ))}
             </ul>
@@ -481,16 +629,23 @@ const AgentDetailPanel = ({
         )}
 
         <div>
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <p
+            className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider"
+            style={{ color: `${accentColor}cc` }}
+          >
             Pasos
           </p>
           <ol className="space-y-1">
             {workflow.graph.nodes.map((n, i) => (
               <li
                 key={n.id}
-                className="flex items-start gap-2 rounded-md bg-muted/30 px-2 py-1.5 text-[11px] text-foreground/85"
+                className="flex items-start gap-2 rounded-md px-2 py-1.5 text-[11px] text-white/85"
+                style={{ background: "rgba(255,255,255,0.04)" }}
               >
-                <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-secondary/20 text-[9px] font-bold text-secondary">
+                <span
+                  className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
+                  style={{ background: `${accentColor}33`, color: accentColor }}
+                >
                   {i + 1}
                 </span>
                 <span>{n.label}</span>
@@ -501,14 +656,18 @@ const AgentDetailPanel = ({
 
         {workflow.tags && workflow.tags.length > 0 && (
           <div>
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <p
+              className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider"
+              style={{ color: `${accentColor}cc` }}
+            >
               Tags
             </p>
             <div className="flex flex-wrap gap-1">
               {workflow.tags.map((t) => (
                 <span
                   key={t}
-                  className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                  className="rounded-md px-1.5 py-0.5 text-[10px] text-white/60"
+                  style={{ background: "rgba(255,255,255,0.06)" }}
                 >
                   #{t}
                 </span>
