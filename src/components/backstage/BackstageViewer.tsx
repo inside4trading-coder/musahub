@@ -1,13 +1,17 @@
 import { useMemo, useState } from "react";
-import { AlertCircle, Inbox, LayoutGrid, RefreshCw, Sparkles, Workflow } from "lucide-react";
+import { AlertCircle, Inbox, LayoutGrid, RefreshCw, Workflow } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useBackstageData } from "@/hooks/useBackstageData";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { BackstageWorkflow } from "@/types/backstage";
 import { WorkflowCard } from "./WorkflowCard";
 import { WorkflowFilters } from "./WorkflowFilters";
 import { WorkflowDetailPanel } from "./WorkflowDetailPanel";
 import { BackstageScene3D } from "./BackstageScene3D";
+import { ControlRoomScene3D } from "./ControlRoomScene3D";
+
+type ViewMode = "grid" | "orbit" | "controlroom";
 
 const formatDate = (iso: string) => {
   try {
@@ -28,7 +32,9 @@ export const BackstageViewer = () => {
   const [selectedIntegrations, setSelectedIntegrations] = useState<string[]>([]);
   const [selected, setSelected] = useState<BackstageWorkflow | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [view, setView] = useState<"grid" | "3d">("3d");
+  const isMobile = useIsMobile();
+  const [view, setView] = useState<ViewMode>("controlroom");
+  const effectiveView: ViewMode = isMobile ? "grid" : view;
 
   const activeWorkflows = useMemo(
     () => data?.workflows.filter((w) => w.active) ?? [],
@@ -136,24 +142,37 @@ export const BackstageViewer = () => {
                 Datos mock
               </span>
             )}
-            <Button
-              size="sm"
-              variant={view === "3d" ? "default" : "outline"}
-              onClick={() => setView((v) => (v === "grid" ? "3d" : "grid"))}
-              className="h-7 px-2.5 text-xs"
-            >
-              {view === "grid" ? (
-                <>
-                  <Sparkles className="mr-1 h-3 w-3" />
-                  Vista 3D
-                </>
-              ) : (
-                <>
-                  <LayoutGrid className="mr-1 h-3 w-3" />
-                  Vista Grid
-                </>
-              )}
-            </Button>
+            {!isMobile && (
+              <div className="flex items-center gap-1 rounded-full border border-border bg-muted/40 p-0.5">
+                <button
+                  onClick={() => setView("grid")}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    view === "grid" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <LayoutGrid className="h-3 w-3" />
+                  Grid
+                </button>
+                <button
+                  onClick={() => setView("orbit")}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    view === "orbit" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span aria-hidden>⬡</span>
+                  Orbit
+                </button>
+                <button
+                  onClick={() => setView("controlroom")}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    view === "controlroom" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span aria-hidden>⚙</span>
+                  Control Room
+                </button>
+              </div>
+            )}
             <Button size="sm" variant="ghost" onClick={refetch} className="h-7 px-2 text-xs">
               <RefreshCw className="mr-1 h-3 w-3" />
               Refrescar
@@ -162,12 +181,25 @@ export const BackstageViewer = () => {
         </div>
       </header>
 
-      {/* Body */}
+      {/* Mobile notice */}
+      {isMobile && view !== "grid" && (
+        <div className="rounded-xl border border-dashed border-border bg-muted/40 p-4 text-center text-xs text-muted-foreground">
+          Vista 3D disponible en escritorio
+        </div>
+      )}
+
+      {/* Body with 400ms fade transition */}
       <div
-        key={view}
-        className="transition-all duration-300 animate-in fade-in zoom-in-95"
+        key={effectiveView}
+        className="transition-opacity duration-[400ms] animate-in fade-in"
       >
-        {view === "3d" && !loading && !error ? (
+        {effectiveView === "controlroom" && !loading && !error ? (
+          <ControlRoomScene3D
+            workflows={filtered.length > 0 ? filtered : activeWorkflows}
+            onExit={() => setView("grid")}
+            onSelectWorkflow={(wf) => { setSelected(wf); }}
+          />
+        ) : effectiveView === "orbit" && !loading && !error ? (
           <BackstageScene3D
             workflows={filtered.length > 0 ? filtered : activeWorkflows}
             onExit={() => setView("grid")}
