@@ -142,24 +142,37 @@ export const BackstageViewer = () => {
                 Datos mock
               </span>
             )}
-            <Button
-              size="sm"
-              variant={view === "3d" ? "default" : "outline"}
-              onClick={() => setView((v) => (v === "grid" ? "3d" : "grid"))}
-              className="h-7 px-2.5 text-xs"
-            >
-              {view === "grid" ? (
-                <>
-                  <Sparkles className="mr-1 h-3 w-3" />
-                  Vista 3D
-                </>
-              ) : (
-                <>
-                  <LayoutGrid className="mr-1 h-3 w-3" />
-                  Vista Grid
-                </>
-              )}
-            </Button>
+            {!isMobile && (
+              <div className="flex items-center gap-1 rounded-full border border-border bg-muted/40 p-0.5">
+                <button
+                  onClick={() => setView("grid")}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    view === "grid" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <LayoutGrid className="h-3 w-3" />
+                  Grid
+                </button>
+                <button
+                  onClick={() => setView("orbit")}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    view === "orbit" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span aria-hidden>⬡</span>
+                  Orbit
+                </button>
+                <button
+                  onClick={() => setView("controlroom")}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    view === "controlroom" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span aria-hidden>⚙</span>
+                  Control Room
+                </button>
+              </div>
+            )}
             <Button size="sm" variant="ghost" onClick={refetch} className="h-7 px-2 text-xs">
               <RefreshCw className="mr-1 h-3 w-3" />
               Refrescar
