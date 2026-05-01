@@ -137,6 +137,12 @@ const TRIGGER_ICON: Record<TriggerKind, string> = {
   manual: "✋",
 };
 
+type AgentNodeProps = {
+  item: PositionedWorkflow;
+  selected: boolean;
+  onSelect: (wf: BackstageWorkflow) => void;
+};
+
 const AgentNode = ({ item, selected, onSelect }: AgentNodeProps) => {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
