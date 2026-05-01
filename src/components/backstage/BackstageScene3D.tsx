@@ -370,8 +370,7 @@ const AnimatedBeam = ({
 
   useFrame(({ clock }) => {
     if (ref.current) {
-      const mat = ref.current.material as THREE.LineDashedMaterial & { dashOffset?: number };
-      // @ts-expect-error dashOffset exists on LineDashedMaterial at runtime
+      const mat = ref.current.material as THREE.LineDashedMaterial & { dashOffset: number };
       mat.dashOffset = -clock.elapsedTime * 0.4;
     }
   });
