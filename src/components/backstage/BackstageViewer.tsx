@@ -10,8 +10,9 @@ import { WorkflowFilters } from "./WorkflowFilters";
 import { WorkflowDetailPanel } from "./WorkflowDetailPanel";
 import { BackstageScene3D } from "./BackstageScene3D";
 import { ControlRoomScene3D } from "./ControlRoomScene3D";
+import { PixelOfficeScene } from "./PixelOfficeScene";
 
-type ViewMode = "grid" | "orbit" | "controlroom";
+type ViewMode = "grid" | "orbit" | "controlroom" | "pixel";
 
 const formatDate = (iso: string) => {
   try {
@@ -171,6 +172,15 @@ export const BackstageViewer = () => {
                   <span aria-hidden>⚙</span>
                   Control Room
                 </button>
+                <button
+                  onClick={() => setView("pixel")}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    view === "pixel" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span aria-hidden>🟦</span>
+                  Pixel Office
+                </button>
               </div>
             )}
             <Button size="sm" variant="ghost" onClick={refetch} className="h-7 px-2 text-xs">
@@ -193,7 +203,14 @@ export const BackstageViewer = () => {
         key={effectiveView}
         className="transition-opacity duration-[400ms] animate-in fade-in"
       >
-        {effectiveView === "controlroom" && !loading && !error ? (
+        {effectiveView === "pixel" && !loading && !error ? (
+          <PixelOfficeScene
+            workflows={filtered.length > 0 ? filtered : activeWorkflows}
+            onExit={() => setView("grid")}
+            onSelectWorkflow={(wf) => { setSelected(wf); setPanelOpen(true); }}
+            generatedAt={data?.generated_at}
+          />
+        ) : effectiveView === "controlroom" && !loading && !error ? (
           <ControlRoomScene3D
             workflows={filtered.length > 0 ? filtered : activeWorkflows}
             onExit={() => setView("grid")}
