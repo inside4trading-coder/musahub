@@ -203,7 +203,14 @@ export const BackstageViewer = () => {
         key={effectiveView}
         className="transition-opacity duration-[400ms] animate-in fade-in"
       >
-        {effectiveView === "controlroom" && !loading && !error ? (
+        {effectiveView === "pixel" && !loading && !error ? (
+          <PixelOfficeScene
+            workflows={filtered.length > 0 ? filtered : activeWorkflows}
+            onExit={() => setView("grid")}
+            onSelectWorkflow={(wf) => { setSelected(wf); setPanelOpen(true); }}
+            generatedAt={data?.generated_at}
+          />
+        ) : effectiveView === "controlroom" && !loading && !error ? (
           <ControlRoomScene3D
             workflows={filtered.length > 0 ? filtered : activeWorkflows}
             onExit={() => setView("grid")}
