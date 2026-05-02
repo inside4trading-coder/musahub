@@ -172,6 +172,15 @@ export const BackstageViewer = () => {
                   <span aria-hidden>⚙</span>
                   Control Room
                 </button>
+                <button
+                  onClick={() => setView("pixel")}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    view === "pixel" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span aria-hidden>🟦</span>
+                  Pixel Office
+                </button>
               </div>
             )}
             <Button size="sm" variant="ghost" onClick={refetch} className="h-7 px-2 text-xs">
