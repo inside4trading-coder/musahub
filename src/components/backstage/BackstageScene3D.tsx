@@ -1,8 +1,97 @@
 import { Suspense, useMemo, useRef, useState, useEffect } from "react";
-import { Canvas, useFrame, ThreeEvent } from "@react-three/fiber";
+import { Canvas, useFrame, ThreeEvent, useLoader } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Html } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
+
+/* ---------- Pixel sprite assets (orbit room) ---------- */
+const ORBIT_ASSETS = {
+  back: "/assets/orbitroom/Back.png",
+  sun: "/assets/orbitroom/Sun2.png",
+  earth: "/assets/orbitroom/Earth.png",
+  moon: "/assets/orbitroom/Moon.png",
+  asteroid: "/assets/orbitroom/Asteroid.png",
+  planet: "/assets/orbitroom/Planet.png",
+  planet1: "/assets/orbitroom/Planet1.png",
+  planet5: "/assets/orbitroom/Planet5.png",
+};
+
+const TRIGGER_SPRITE: Record<string, string> = {
+  telegram: ORBIT_ASSETS.planet1,
+  webhook: ORBIT_ASSETS.planet,
+  schedule: ORBIT_ASSETS.planet5,
+  chat: ORBIT_ASSETS.earth,
+  manual: ORBIT_ASSETS.asteroid,
+};
+
+const usePixelTexture = (url: string) => {
+  const tex = useLoader(THREE.TextureLoader, url);
+  useEffect(() => {
+    tex.magFilter = THREE.NearestFilter;
+    tex.minFilter = THREE.NearestFilter;
+    tex.generateMipmaps = false;
+    (tex as any).colorSpace = THREE.SRGBColorSpace;
+    tex.needsUpdate = true;
+  }, [tex]);
+  return tex;
+};
+
+/* Pixel sprite that always faces the camera */
+const PixelSprite = ({
+  url,
+  size = 1,
+  opacity = 1,
+  onClick,
+  onPointerOver,
+  onPointerOut,
+}: {
+  url: string;
+  size?: number;
+  opacity?: number;
+  onClick?: (e: ThreeEvent<MouseEvent>) => void;
+  onPointerOver?: () => void;
+  onPointerOut?: () => void;
+}) => {
+  const tex = usePixelTexture(url);
+  return (
+    <sprite scale={[size, size, size]} onClick={onClick} onPointerOver={onPointerOver} onPointerOut={onPointerOut}>
+      <spriteMaterial map={tex} transparent opacity={opacity} depthWrite={false} />
+    </sprite>
+  );
+};
+
+/* Pixel-art skybox using the Back.png tile */
+const Skybox = () => {
+  const tex = usePixelTexture(ORBIT_ASSETS.back);
+  useEffect(() => {
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 2);
+    tex.needsUpdate = true;
+  }, [tex]);
+  return (
+    <mesh>
+      <sphereGeometry args={[60, 32, 32]} />
+      <meshBasicMaterial map={tex} side={THREE.BackSide} depthWrite={false} />
+    </mesh>
+  );
+};
+
+/* Central Sun sprite with subtle pulse */
+const Sun = () => {
+  const ref = useRef<THREE.Sprite>(null);
+  const tex = usePixelTexture(ORBIT_ASSETS.sun);
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const s = 2.4 + Math.sin(clock.elapsedTime * 1.2) * 0.08;
+    ref.current.scale.setScalar(s);
+  });
+  return (
+    <sprite ref={ref} position={[0, 0.5, 0]} scale={[2.4, 2.4, 2.4]}>
+      <spriteMaterial map={tex} transparent depthWrite={false} />
+    </sprite>
+  );
+};
 import { X } from "lucide-react";
 import type { BackstageWorkflow } from "@/types/backstage";
 import { TriggerBadge } from "./TriggerBadge";
@@ -81,50 +170,26 @@ const computeLayout = (workflows: BackstageWorkflow[]): PositionedWorkflow[] => 
 };
 
 const Particles = () => {
-  const starPositions = useMemo(() => {
-    const arr = new Float32Array(300 * 3);
-    for (let i = 0; i < 300; i++) {
-      arr[i * 3] = (Math.random() - 0.5) * 50;
-      arr[i * 3 + 1] = (Math.random() - 0.5) * 30;
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 50;
+  // Floating asteroid sprites instead of point particles
+  const positions = useMemo(() => {
+    const arr: [number, number, number][] = [];
+    for (let i = 0; i < 18; i++) {
+      arr.push([
+        (Math.random() - 0.5) * 30,
+        (Math.random() - 0.5) * 16,
+        (Math.random() - 0.5) * 30,
+      ]);
     }
     return arr;
   }, []);
-
-  const dustPositions = useMemo(() => {
-    const arr = new Float32Array(120 * 3);
-    for (let i = 0; i < 120; i++) {
-      arr[i * 3] = (Math.random() - 0.5) * 35;
-      arr[i * 3 + 1] = (Math.random() - 0.5) * 20;
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 35;
-    }
-    return arr;
-  }, []);
-
+  const tex = usePixelTexture(ORBIT_ASSETS.asteroid);
   return (
     <>
-      <points>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            array={starPositions}
-            count={300}
-            itemSize={3}
-          />
-        </bufferGeometry>
-        <pointsMaterial size={0.025} color="#ffffff" transparent opacity={0.85} sizeAttenuation />
-      </points>
-      <points>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            array={dustPositions}
-            count={120}
-            itemSize={3}
-          />
-        </bufferGeometry>
-        <pointsMaterial size={0.08} color="#4f98a3" transparent opacity={0.35} sizeAttenuation />
-      </points>
+      {positions.map((p, i) => (
+        <sprite key={i} position={p} scale={[0.6, 0.6, 0.6]}>
+          <spriteMaterial map={tex} transparent opacity={0.7} depthWrite={false} />
+        </sprite>
+      ))}
     </>
   );
 };
@@ -258,43 +323,38 @@ const AgentNode = ({ item, selected, onSelect }: AgentNodeProps) => {
     onSelect(item.workflow);
   };
 
+  const spriteUrl = TRIGGER_SPRITE[item.trigger] ?? ORBIT_ASSETS.planet;
+  const baseSize = style.radius * 2.4;
+
   return (
     <group ref={groupRef} position={item.position}>
-      {/* Onda expansiva del heartbeat */}
+      {/* Heartbeat shockwave ring */}
       <mesh ref={heartbeatRingRef} rotation={[Math.PI / 2, 0, 0]} visible={false}>
         <ringGeometry args={[style.radius * 1.1, style.radius * 1.25, 64]} />
         <meshBasicMaterial color={style.color} transparent opacity={0.7} side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Glow exterior */}
-      <mesh ref={glowRef}>
-        <sphereGeometry args={[style.radius, 24, 24]} />
-        <meshBasicMaterial color={style.color} transparent opacity={0.12} />
-      </mesh>
+      {/* Soft glow halo behind the sprite */}
+      <sprite ref={glowRef as any} scale={[baseSize * 1.7, baseSize * 1.7, 1]}>
+        <spriteMaterial
+          color={style.color}
+          transparent
+          opacity={0.18}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </sprite>
 
-      {/* Esfera principal con Phong */}
-      <mesh
-        ref={meshRef}
+      {/* Main pixel sprite */}
+      <sprite
+        ref={meshRef as any}
+        scale={[baseSize, baseSize, 1]}
         onClick={handleClick}
         onPointerOver={() => (document.body.style.cursor = "pointer")}
         onPointerOut={() => (document.body.style.cursor = "default")}
       >
-        <sphereGeometry args={[style.radius, 48, 48]} />
-        <meshPhongMaterial
-          ref={phongRef}
-          color={style.color}
-          emissive={style.color}
-          emissiveIntensity={selected ? 0.95 : 0.55}
-          specular={"#ffffff"}
-          shininess={80}
-        />
-      </mesh>
-
-      {/* Wireframe técnico sutil */}
-      <mesh scale={1.04}>
-        <sphereGeometry args={[style.radius, 16, 12]} />
-        <meshBasicMaterial color={style.color} wireframe transparent opacity={0.1} />
-      </mesh>
+        <spriteMaterial map={usePixelTexture(spriteUrl)} transparent depthWrite={false} />
+      </sprite>
 
       {style.idle === "rings" && (
         <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
@@ -387,21 +447,15 @@ const Satellite = ({
     groupRef.current.position.z = Math.sin(angle) * r;
     groupRef.current.position.y = 0.1;
   });
+  const tex = usePixelTexture(ORBIT_ASSETS.moon);
   return (
     <group ref={groupRef}>
-      <mesh>
-        <sphereGeometry args={[0.07, 14, 14]} />
-        <meshPhongMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={1}
-          shininess={60}
-        />
-      </mesh>
-      <mesh scale={1.8}>
-        <sphereGeometry args={[0.07, 12, 12]} />
-        <meshBasicMaterial color={color} transparent opacity={0.18} />
-      </mesh>
+      <sprite scale={[0.35, 0.35, 1]}>
+        <spriteMaterial map={tex} transparent depthWrite={false} />
+      </sprite>
+      <sprite scale={[0.55, 0.55, 1]}>
+        <spriteMaterial color={color} transparent opacity={0.25} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </sprite>
     </group>
   );
 };
@@ -543,6 +597,8 @@ export const BackstageScene3D = ({ workflows, onExit }: Props) => {
         <pointLight position={[0, -6, 0]} intensity={0.25} color="#e8af34" />
 
         <Suspense fallback={null}>
+          <Skybox />
+          <Sun />
           <Particles />
           <Connections items={items} />
           {items.map((it) => (
