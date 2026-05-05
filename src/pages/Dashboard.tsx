@@ -12,7 +12,7 @@ import { Bar, BarChart, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'recha
 interface KpiData {
   dealCount: number;
   pipelineValue: number;
-  prospectsThisMonth: number;
+  validCallsThisMonth: number;
   campaignsThisMonth: number;
   wonDealsValue: number;
 }
@@ -89,9 +89,9 @@ const Dashboard = () => {
         fourteenDaysAgo.setHours(0, 0, 0, 0);
         const chartStart = fourteenDaysAgo.toISOString();
 
-        const [dealsRes, prospectsRes, campaignsRes, stageChangesRes, validCallsRes, stageChangesChartRes, validCallsChartRes, allCallsChartRes, answeredCallsChartRes, emailLogsChartRes] = await Promise.all([
+        const [dealsRes, validCallsMonthRes, campaignsRes, stageChangesRes, validCallsRes, stageChangesChartRes, validCallsChartRes, allCallsChartRes, answeredCallsChartRes, emailLogsChartRes] = await Promise.all([
           supabase.from('deals').select('id, deal_value, company_name, created_at, stage'),
-          supabase.from('prospects').select('id, business_name, created_at').gte('created_at', monthStart),
+          supabase.from('calls').select('id', { count: 'exact', head: true }).eq('status', 'answered').gte('duration', 60).gte('started_at', monthStart),
           supabase.from('email_campaigns').select('id, campaign_name, created_at, status').gte('created_at', monthStart),
           supabase.from('deal_activities').select('id, deal_id, note, created_at, activity_type').eq('activity_type', 'stage_change').order('created_at', { ascending: false }).limit(15),
           supabase.from('calls').select('id, caller, destination, duration, started_at, agent_name, status').eq('status', 'answered').gte('duration', 60).order('started_at', { ascending: false }).limit(15),
@@ -110,7 +110,7 @@ const Dashboard = () => {
         setKpis({
           dealCount: activeDeals.length,
           pipelineValue: activeDeals.reduce((s, d) => s + Number(d.deal_value), 0),
-          prospectsThisMonth: (prospectsRes.data || []).length,
+          validCallsThisMonth: validCallsMonthRes.count || 0,
           campaignsThisMonth: (campaignsRes.data || []).length,
           wonDealsValue: wonDeals.reduce((s, d) => s + Number(d.deal_value), 0),
         });
@@ -211,7 +211,7 @@ const Dashboard = () => {
         setKpis({
           dealCount: 0,
           pipelineValue: 0,
-          prospectsThisMonth: 0,
+          validCallsThisMonth: 0,
           campaignsThisMonth: 0,
           wonDealsValue: 0,
         });
@@ -229,7 +229,7 @@ const Dashboard = () => {
     { label: 'Deals en Pipeline', value: String(kpis.dealCount), icon: Briefcase },
     { label: 'Valor Pipeline', value: `€${kpis.pipelineValue.toLocaleString()}`, icon: Euro },
     { label: 'Negocios Ganados', value: `€${kpis.wonDealsValue.toLocaleString()}`, icon: Trophy },
-    { label: 'Prospectos este mes', value: String(kpis.prospectsThisMonth), icon: Users },
+    { label: 'Llamadas válidas este mes', value: String(kpis.validCallsThisMonth), icon: Users },
     { label: 'Campañas este mes', value: String(kpis.campaignsThisMonth), icon: Mail },
   ] : [];
 
