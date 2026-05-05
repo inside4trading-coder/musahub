@@ -1,5 +1,114 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { X, Plus, Minus, Volume2, VolumeX } from "lucide-react";
+
+/* ---------- Robot profile mapping (mirrors Control Room) ---------- */
+type RobotProfile = { matchIds: string[]; short: string; color: string; zone: string };
+const PROFILES: RobotProfile[] = [
+  { matchIds: ["r2d2-telegram-router"], short: "R2-D2", color: "#4f98a3", zone: "Telegram Lab" },
+  { matchIds: ["3po-charts-agent"], short: "3-PO", color: "#5eb8c5", zone: "Telegram Lab" },
+  { matchIds: ["email-campaign-webhook", "email-campaign"], short: "MAILER", color: "#e8af34", zone: "Webhook Factory" },
+  { matchIds: ["delivery-enrichment"], short: "SCOUT", color: "#d4971e", zone: "Webhook Factory" },
+  { matchIds: ["rss-news-aggregator", "rss-aggregator"], short: "HERALD", color: "#6daa45", zone: "Schedule Observatory" },
+  { matchIds: ["schumann-resonance", "schumann"], short: "ΣΚUMANN", color: "#4e9e3a", zone: "Schedule Observatory" },
+  { matchIds: ["seo-audit-chat", "seo-audit"], short: "ORACLE", color: "#a86fdf", zone: "Oracle Core" },
+];
+const findProfile = (id: string) => PROFILES.find((p) => p.matchIds.includes(id));
+
+const TRIGGER_ICONS: Record<string, string> = {
+  webhook: "⚡", schedule: "⏰", telegram: "✈", chat: "💬", manual: "🖐",
+};
+
+function stateForBehavior(b: "working" | "reading" | "patrol" | "idle"): string {
+  if (b === "working") return "processing";
+  if (b === "reading") return "typing";
+  if (b === "patrol") return "sending";
+  return "idle";
+}
+
+/* ---------- Detail panel overlay (matches Control Room) ---------- */
+function DetailPanel({
+  workflow, state, onClose,
+}: { workflow: BackstageWorkflow; state: string; onClose: () => void }) {
+  const profile = findProfile(workflow.id);
+  const c = profile?.color ?? "#4ECDC4";
+  return (
+    <div
+      className="absolute right-4 top-4 z-20 max-h-[calc(100%-2rem)] w-[340px] overflow-y-auto rounded-[14px] p-5 text-white animate-in fade-in slide-in-from-right-4"
+      style={{
+        background: "rgba(7,8,13,0.88)",
+        backdropFilter: "blur(20px)",
+        border: `1px solid ${c}44`,
+        boxShadow: `0 0 40px ${c}22, 0 8px 32px rgba(0,0,0,0.6)`,
+        fontFamily: "ui-sans-serif, system-ui, sans-serif",
+      }}
+    >
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">
+            {workflow.id}
+          </div>
+          <h3 className="text-lg font-bold leading-tight" style={{ color: c }}>
+            {profile?.short ?? workflow.name}
+          </h3>
+          <p className="text-xs text-white/70">{workflow.name}</p>
+        </div>
+        <button onClick={onClose} className="rounded-md p-1 text-white/60 hover:bg-white/10 hover:text-white">
+          ✕
+        </button>
+      </div>
+
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span
+          className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+          style={{ color: c, borderColor: `${c}66`, background: `${c}14` }}
+        >
+          {TRIGGER_ICONS[workflow.triggers[0]] ?? "⚡"} {workflow.triggers[0]}
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-medium text-white/80">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: c }} />
+          {state}
+        </span>
+        {profile?.zone && (
+          <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-white/60">
+            {profile.zone}
+          </span>
+        )}
+      </div>
+
+      {workflow.description && (
+        <p className="mb-4 text-xs leading-relaxed text-white/80">{workflow.description}</p>
+      )}
+
+      <div className="mb-4">
+        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/50">
+          Integraciones
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {workflow.integrations.map((i) => (
+            <span key={i} className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] text-white/85">
+              {i}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/50">
+          Pasos
+        </p>
+        <ol className="space-y-1">
+          {workflow.graph.nodes.map((n, idx) => (
+            <li key={n.id} className="flex items-center gap-2 rounded-md border border-white/5 bg-white/[0.03] px-2 py-1 text-xs text-white/85">
+              <span className="text-[10px] text-white/40">{idx + 1}</span>
+              <span>{n.label}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  );
+}
+
 import { OfficeState } from "@/lib/pixel-office/office/engine/officeState";
 import { startGameLoop } from "@/lib/pixel-office/office/engine/gameLoop";
 import { renderFrame } from "@/lib/pixel-office/office/engine/renderer";
@@ -73,6 +182,8 @@ export const PixelOfficeScene = ({ workflows, onExit, onSelectWorkflow, generate
   const [zoom, setZoom] = useState(3);
   const [soundOn, setSoundOn] = useState(true);
   const [now, setNow] = useState(() => new Date());
+  const [selected, setSelected] = useState<BackstageWorkflow | null>(null);
+  const [selectedBehavior, setSelectedBehavior] = useState<Behavior>("idle");
 
   // Live clock
   useEffect(() => {
@@ -232,9 +343,17 @@ export const PixelOfficeScene = ({ workflows, onExit, onSelectWorkflow, generate
     if (id !== null) {
       office.selectedAgentId = id;
       const wf = idMapRef.current.get(id);
-      if (wf) onSelectWorkflow(wf);
+      if (wf) {
+        setSelected(wf);
+        setSelectedBehavior(behaviorFor(wf.triggers));
+      }
+    } else {
+      setSelected(null);
     }
   };
+
+  // Notify parent only on detail "expand" (optional secondary action handled via close = local)
+  void onSelectWorkflow;
 
   const timestamp = now.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   const agentCount = workflows.length;
@@ -307,6 +426,16 @@ export const PixelOfficeScene = ({ workflows, onExit, onSelectWorkflow, generate
           </button>
         </div>
       </div>
+      {selected && (
+        <DetailPanel
+          workflow={selected}
+          state={stateForBehavior(selectedBehavior)}
+          onClose={() => {
+            setSelected(null);
+            if (officeRef.current) officeRef.current.selectedAgentId = null;
+          }}
+        />
+      )}
     </div>
   );
 };
