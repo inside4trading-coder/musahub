@@ -597,6 +597,8 @@ export const BackstageScene3D = ({ workflows, onExit }: Props) => {
         <pointLight position={[0, -6, 0]} intensity={0.25} color="#e8af34" />
 
         <Suspense fallback={null}>
+          <Skybox />
+          <Sun />
           <Particles />
           <Connections items={items} />
           {items.map((it) => (
