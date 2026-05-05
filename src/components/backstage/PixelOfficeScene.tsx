@@ -426,6 +426,16 @@ export const PixelOfficeScene = ({ workflows, onExit, onSelectWorkflow, generate
           </button>
         </div>
       </div>
+      {selected && (
+        <DetailPanel
+          workflow={selected}
+          state={stateForBehavior(selectedBehavior)}
+          onClose={() => {
+            setSelected(null);
+            if (officeRef.current) officeRef.current.selectedAgentId = null;
+          }}
+        />
+      )}
     </div>
   );
 };
