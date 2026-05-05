@@ -170,50 +170,26 @@ const computeLayout = (workflows: BackstageWorkflow[]): PositionedWorkflow[] => 
 };
 
 const Particles = () => {
-  const starPositions = useMemo(() => {
-    const arr = new Float32Array(300 * 3);
-    for (let i = 0; i < 300; i++) {
-      arr[i * 3] = (Math.random() - 0.5) * 50;
-      arr[i * 3 + 1] = (Math.random() - 0.5) * 30;
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 50;
+  // Floating asteroid sprites instead of point particles
+  const positions = useMemo(() => {
+    const arr: [number, number, number][] = [];
+    for (let i = 0; i < 18; i++) {
+      arr.push([
+        (Math.random() - 0.5) * 30,
+        (Math.random() - 0.5) * 16,
+        (Math.random() - 0.5) * 30,
+      ]);
     }
     return arr;
   }, []);
-
-  const dustPositions = useMemo(() => {
-    const arr = new Float32Array(120 * 3);
-    for (let i = 0; i < 120; i++) {
-      arr[i * 3] = (Math.random() - 0.5) * 35;
-      arr[i * 3 + 1] = (Math.random() - 0.5) * 20;
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 35;
-    }
-    return arr;
-  }, []);
-
+  const tex = usePixelTexture(ORBIT_ASSETS.asteroid);
   return (
     <>
-      <points>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            array={starPositions}
-            count={300}
-            itemSize={3}
-          />
-        </bufferGeometry>
-        <pointsMaterial size={0.025} color="#ffffff" transparent opacity={0.85} sizeAttenuation />
-      </points>
-      <points>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            array={dustPositions}
-            count={120}
-            itemSize={3}
-          />
-        </bufferGeometry>
-        <pointsMaterial size={0.08} color="#4f98a3" transparent opacity={0.35} sizeAttenuation />
-      </points>
+      {positions.map((p, i) => (
+        <sprite key={i} position={p} scale={[0.6, 0.6, 0.6]}>
+          <spriteMaterial map={tex} transparent opacity={0.7} depthWrite={false} />
+        </sprite>
+      ))}
     </>
   );
 };
