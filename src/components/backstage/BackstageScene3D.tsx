@@ -447,21 +447,15 @@ const Satellite = ({
     groupRef.current.position.z = Math.sin(angle) * r;
     groupRef.current.position.y = 0.1;
   });
+  const tex = usePixelTexture(ORBIT_ASSETS.moon);
   return (
     <group ref={groupRef}>
-      <mesh>
-        <sphereGeometry args={[0.07, 14, 14]} />
-        <meshPhongMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={1}
-          shininess={60}
-        />
-      </mesh>
-      <mesh scale={1.8}>
-        <sphereGeometry args={[0.07, 12, 12]} />
-        <meshBasicMaterial color={color} transparent opacity={0.18} />
-      </mesh>
+      <sprite scale={[0.35, 0.35, 1]}>
+        <spriteMaterial map={tex} transparent depthWrite={false} />
+      </sprite>
+      <sprite scale={[0.55, 0.55, 1]}>
+        <spriteMaterial color={color} transparent opacity={0.25} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </sprite>
     </group>
   );
 };
