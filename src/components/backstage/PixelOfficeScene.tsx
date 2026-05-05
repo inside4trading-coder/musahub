@@ -343,9 +343,17 @@ export const PixelOfficeScene = ({ workflows, onExit, onSelectWorkflow, generate
     if (id !== null) {
       office.selectedAgentId = id;
       const wf = idMapRef.current.get(id);
-      if (wf) onSelectWorkflow(wf);
+      if (wf) {
+        setSelected(wf);
+        setSelectedBehavior(behaviorFor(wf.triggers));
+      }
+    } else {
+      setSelected(null);
     }
   };
+
+  // Notify parent only on detail "expand" (optional secondary action handled via close = local)
+  void onSelectWorkflow;
 
   const timestamp = now.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   const agentCount = workflows.length;
