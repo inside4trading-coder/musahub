@@ -182,6 +182,8 @@ export const PixelOfficeScene = ({ workflows, onExit, onSelectWorkflow, generate
   const [zoom, setZoom] = useState(3);
   const [soundOn, setSoundOn] = useState(true);
   const [now, setNow] = useState(() => new Date());
+  const [selected, setSelected] = useState<BackstageWorkflow | null>(null);
+  const [selectedBehavior, setSelectedBehavior] = useState<Behavior>("idle");
 
   // Live clock
   useEffect(() => {
