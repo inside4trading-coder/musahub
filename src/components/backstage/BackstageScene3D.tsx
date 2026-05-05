@@ -1,8 +1,97 @@
 import { Suspense, useMemo, useRef, useState, useEffect } from "react";
-import { Canvas, useFrame, ThreeEvent } from "@react-three/fiber";
+import { Canvas, useFrame, ThreeEvent, useLoader } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Html } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
+
+/* ---------- Pixel sprite assets (orbit room) ---------- */
+const ORBIT_ASSETS = {
+  back: "/assets/orbitroom/Back.png",
+  sun: "/assets/orbitroom/Sun2.png",
+  earth: "/assets/orbitroom/Earth.png",
+  moon: "/assets/orbitroom/Moon.png",
+  asteroid: "/assets/orbitroom/Asteroid.png",
+  planet: "/assets/orbitroom/Planet.png",
+  planet1: "/assets/orbitroom/Planet1.png",
+  planet5: "/assets/orbitroom/Planet5.png",
+};
+
+const TRIGGER_SPRITE: Record<string, string> = {
+  telegram: ORBIT_ASSETS.planet1,
+  webhook: ORBIT_ASSETS.planet,
+  schedule: ORBIT_ASSETS.planet5,
+  chat: ORBIT_ASSETS.earth,
+  manual: ORBIT_ASSETS.asteroid,
+};
+
+const usePixelTexture = (url: string) => {
+  const tex = useLoader(THREE.TextureLoader, url);
+  useEffect(() => {
+    tex.magFilter = THREE.NearestFilter;
+    tex.minFilter = THREE.NearestFilter;
+    tex.generateMipmaps = false;
+    (tex as any).colorSpace = THREE.SRGBColorSpace;
+    tex.needsUpdate = true;
+  }, [tex]);
+  return tex;
+};
+
+/* Pixel sprite that always faces the camera */
+const PixelSprite = ({
+  url,
+  size = 1,
+  opacity = 1,
+  onClick,
+  onPointerOver,
+  onPointerOut,
+}: {
+  url: string;
+  size?: number;
+  opacity?: number;
+  onClick?: (e: ThreeEvent<MouseEvent>) => void;
+  onPointerOver?: () => void;
+  onPointerOut?: () => void;
+}) => {
+  const tex = usePixelTexture(url);
+  return (
+    <sprite scale={[size, size, size]} onClick={onClick} onPointerOver={onPointerOver} onPointerOut={onPointerOut}>
+      <spriteMaterial map={tex} transparent opacity={opacity} depthWrite={false} />
+    </sprite>
+  );
+};
+
+/* Pixel-art skybox using the Back.png tile */
+const Skybox = () => {
+  const tex = usePixelTexture(ORBIT_ASSETS.back);
+  useEffect(() => {
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 2);
+    tex.needsUpdate = true;
+  }, [tex]);
+  return (
+    <mesh>
+      <sphereGeometry args={[60, 32, 32]} />
+      <meshBasicMaterial map={tex} side={THREE.BackSide} depthWrite={false} />
+    </mesh>
+  );
+};
+
+/* Central Sun sprite with subtle pulse */
+const Sun = () => {
+  const ref = useRef<THREE.Sprite>(null);
+  const tex = usePixelTexture(ORBIT_ASSETS.sun);
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const s = 2.4 + Math.sin(clock.elapsedTime * 1.2) * 0.08;
+    ref.current.scale.setScalar(s);
+  });
+  return (
+    <sprite ref={ref} position={[0, 0.5, 0]} scale={[2.4, 2.4, 2.4]}>
+      <spriteMaterial map={tex} transparent depthWrite={false} />
+    </sprite>
+  );
+};
 import { X } from "lucide-react";
 import type { BackstageWorkflow } from "@/types/backstage";
 import { TriggerBadge } from "./TriggerBadge";
