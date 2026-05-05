@@ -323,43 +323,38 @@ const AgentNode = ({ item, selected, onSelect }: AgentNodeProps) => {
     onSelect(item.workflow);
   };
 
+  const spriteUrl = TRIGGER_SPRITE[item.trigger] ?? ORBIT_ASSETS.planet;
+  const baseSize = style.radius * 2.4;
+
   return (
     <group ref={groupRef} position={item.position}>
-      {/* Onda expansiva del heartbeat */}
+      {/* Heartbeat shockwave ring */}
       <mesh ref={heartbeatRingRef} rotation={[Math.PI / 2, 0, 0]} visible={false}>
         <ringGeometry args={[style.radius * 1.1, style.radius * 1.25, 64]} />
         <meshBasicMaterial color={style.color} transparent opacity={0.7} side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Glow exterior */}
-      <mesh ref={glowRef}>
-        <sphereGeometry args={[style.radius, 24, 24]} />
-        <meshBasicMaterial color={style.color} transparent opacity={0.12} />
-      </mesh>
+      {/* Soft glow halo behind the sprite */}
+      <sprite ref={glowRef as any} scale={[baseSize * 1.7, baseSize * 1.7, 1]}>
+        <spriteMaterial
+          color={style.color}
+          transparent
+          opacity={0.18}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </sprite>
 
-      {/* Esfera principal con Phong */}
-      <mesh
-        ref={meshRef}
+      {/* Main pixel sprite */}
+      <sprite
+        ref={meshRef as any}
+        scale={[baseSize, baseSize, 1]}
         onClick={handleClick}
         onPointerOver={() => (document.body.style.cursor = "pointer")}
         onPointerOut={() => (document.body.style.cursor = "default")}
       >
-        <sphereGeometry args={[style.radius, 48, 48]} />
-        <meshPhongMaterial
-          ref={phongRef}
-          color={style.color}
-          emissive={style.color}
-          emissiveIntensity={selected ? 0.95 : 0.55}
-          specular={"#ffffff"}
-          shininess={80}
-        />
-      </mesh>
-
-      {/* Wireframe técnico sutil */}
-      <mesh scale={1.04}>
-        <sphereGeometry args={[style.radius, 16, 12]} />
-        <meshBasicMaterial color={style.color} wireframe transparent opacity={0.1} />
-      </mesh>
+        <spriteMaterial map={usePixelTexture(spriteUrl)} transparent depthWrite={false} />
+      </sprite>
 
       {style.idle === "rings" && (
         <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
