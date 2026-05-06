@@ -36,6 +36,25 @@ const usePixelTexture = (url: string) => {
   return tex;
 };
 
+/* Soft radial glow texture (circular alpha) to avoid square halos */
+let _glowTex: THREE.CanvasTexture | null = null;
+const getRadialGlowTexture = () => {
+  if (_glowTex) return _glowTex;
+  const size = 128;
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.4, "rgba(255,255,255,0.45)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  _glowTex = new THREE.CanvasTexture(c);
+  _glowTex.needsUpdate = true;
+  return _glowTex;
+};
+
 /* Pixel sprite that always faces the camera */
 const PixelSprite = ({
   url,
@@ -334,12 +353,13 @@ const AgentNode = ({ item, selected, onSelect }: AgentNodeProps) => {
         <meshBasicMaterial color={style.color} transparent opacity={0.7} side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Soft glow halo behind the sprite */}
-      <sprite ref={glowRef as any} scale={[baseSize * 1.7, baseSize * 1.7, 1]}>
+      {/* Soft radial glow halo behind the sprite */}
+      <sprite ref={glowRef as any} scale={[baseSize * 1.9, baseSize * 1.9, 1]}>
         <spriteMaterial
+          map={getRadialGlowTexture()}
           color={style.color}
           transparent
-          opacity={0.18}
+          opacity={0.22}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -453,8 +473,8 @@ const Satellite = ({
       <sprite scale={[0.35, 0.35, 1]}>
         <spriteMaterial map={tex} transparent depthWrite={false} />
       </sprite>
-      <sprite scale={[0.55, 0.55, 1]}>
-        <spriteMaterial color={color} transparent opacity={0.25} depthWrite={false} blending={THREE.AdditiveBlending} />
+      <sprite scale={[0.6, 0.6, 1]}>
+        <spriteMaterial map={getRadialGlowTexture()} color={color} transparent opacity={0.35} depthWrite={false} blending={THREE.AdditiveBlending} />
       </sprite>
     </group>
   );
