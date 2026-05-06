@@ -33,7 +33,7 @@ export const BackstageViewer = () => {
   const [selected, setSelected] = useState<BackstageWorkflow | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const isMobile = useIsMobile();
-  const [view, setView] = useState<ViewMode>("controlroom");
+  const [view, setView] = useState<ViewMode>("pixel");
   const effectiveView: ViewMode = isMobile ? "grid" : view;
 
   const activeWorkflows = useMemo(
@@ -163,15 +163,6 @@ export const BackstageViewer = () => {
                   Orbit
                 </button>
                 <button
-                  onClick={() => setView("controlroom")}
-                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                    view === "controlroom" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <span aria-hidden>⚙</span>
-                  Control Room
-                </button>
-                <button
                   onClick={() => setView("pixel")}
                   className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
                     view === "pixel" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
@@ -208,12 +199,6 @@ export const BackstageViewer = () => {
             onExit={() => setView("grid")}
             onSelectWorkflow={(wf) => { setSelected(wf); setPanelOpen(true); }}
             generatedAt={data?.generated_at}
-          />
-        ) : effectiveView === "controlroom" && !loading && !error ? (
-          <ControlRoomScene3D
-            workflows={filtered.length > 0 ? filtered : activeWorkflows}
-            onExit={() => setView("grid")}
-            onSelectWorkflow={(wf) => { setSelected(wf); }}
           />
         ) : effectiveView === "orbit" && !loading && !error ? (
           <BackstageScene3D
