@@ -36,6 +36,25 @@ const usePixelTexture = (url: string) => {
   return tex;
 };
 
+/* Soft radial glow texture (circular alpha) to avoid square halos */
+let _glowTex: THREE.CanvasTexture | null = null;
+const getRadialGlowTexture = () => {
+  if (_glowTex) return _glowTex;
+  const size = 128;
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.4, "rgba(255,255,255,0.45)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  _glowTex = new THREE.CanvasTexture(c);
+  _glowTex.needsUpdate = true;
+  return _glowTex;
+};
+
 /* Pixel sprite that always faces the camera */
 const PixelSprite = ({
   url,
