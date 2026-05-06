@@ -473,8 +473,8 @@ const Satellite = ({
       <sprite scale={[0.35, 0.35, 1]}>
         <spriteMaterial map={tex} transparent depthWrite={false} />
       </sprite>
-      <sprite scale={[0.55, 0.55, 1]}>
-        <spriteMaterial color={color} transparent opacity={0.25} depthWrite={false} blending={THREE.AdditiveBlending} />
+      <sprite scale={[0.6, 0.6, 1]}>
+        <spriteMaterial map={getRadialGlowTexture()} color={color} transparent opacity={0.35} depthWrite={false} blending={THREE.AdditiveBlending} />
       </sprite>
     </group>
   );
