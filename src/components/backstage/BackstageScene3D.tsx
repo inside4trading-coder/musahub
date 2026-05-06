@@ -353,12 +353,13 @@ const AgentNode = ({ item, selected, onSelect }: AgentNodeProps) => {
         <meshBasicMaterial color={style.color} transparent opacity={0.7} side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Soft glow halo behind the sprite */}
-      <sprite ref={glowRef as any} scale={[baseSize * 1.7, baseSize * 1.7, 1]}>
+      {/* Soft radial glow halo behind the sprite */}
+      <sprite ref={glowRef as any} scale={[baseSize * 1.9, baseSize * 1.9, 1]}>
         <spriteMaterial
+          map={getRadialGlowTexture()}
           color={style.color}
           transparent
-          opacity={0.18}
+          opacity={0.22}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
