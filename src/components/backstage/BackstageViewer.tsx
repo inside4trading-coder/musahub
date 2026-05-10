@@ -9,9 +9,8 @@ import { WorkflowCard } from "./WorkflowCard";
 import { WorkflowFilters } from "./WorkflowFilters";
 import { WorkflowDetailPanel } from "./WorkflowDetailPanel";
 import { BackstageScene3D } from "./BackstageScene3D";
-import { PixelOfficeScene } from "./PixelOfficeScene";
 
-type ViewMode = "grid" | "orbit" | "pixel";
+type ViewMode = "grid" | "orbit";
 
 const formatDate = (iso: string) => {
   try {
@@ -33,7 +32,7 @@ export const BackstageViewer = () => {
   const [selected, setSelected] = useState<BackstageWorkflow | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const isMobile = useIsMobile();
-  const [view, setView] = useState<ViewMode>("pixel");
+  const [view, setView] = useState<ViewMode>("orbit");
   const effectiveView: ViewMode = isMobile ? "grid" : view;
 
   const activeWorkflows = useMemo(
@@ -162,15 +161,6 @@ export const BackstageViewer = () => {
                   <span aria-hidden>⬡</span>
                   Orbit
                 </button>
-                <button
-                  onClick={() => setView("pixel")}
-                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                    view === "pixel" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <span aria-hidden>🟦</span>
-                  Pixel Office
-                </button>
               </div>
             )}
             <Button size="sm" variant="ghost" onClick={refetch} className="h-7 px-2 text-xs">
@@ -193,14 +183,7 @@ export const BackstageViewer = () => {
         key={effectiveView}
         className="transition-opacity duration-[400ms] animate-in fade-in"
       >
-        {effectiveView === "pixel" && !loading && !error ? (
-          <PixelOfficeScene
-            workflows={filtered.length > 0 ? filtered : activeWorkflows}
-            onExit={() => setView("grid")}
-            onSelectWorkflow={(wf) => { setSelected(wf); setPanelOpen(true); }}
-            generatedAt={data?.generated_at}
-          />
-        ) : effectiveView === "orbit" && !loading && !error ? (
+        {effectiveView === "orbit" && !loading && !error ? (
           <BackstageScene3D
             workflows={filtered.length > 0 ? filtered : activeWorkflows}
             onExit={() => setView("grid")}
