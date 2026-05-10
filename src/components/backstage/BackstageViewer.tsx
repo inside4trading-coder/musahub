@@ -9,9 +9,8 @@ import { WorkflowCard } from "./WorkflowCard";
 import { WorkflowFilters } from "./WorkflowFilters";
 import { WorkflowDetailPanel } from "./WorkflowDetailPanel";
 import { BackstageScene3D } from "./BackstageScene3D";
-import { PixelOfficeScene } from "./PixelOfficeScene";
 
-type ViewMode = "grid" | "orbit" | "pixel";
+type ViewMode = "grid" | "orbit";
 
 const formatDate = (iso: string) => {
   try {
