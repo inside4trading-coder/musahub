@@ -32,7 +32,7 @@ export const BackstageViewer = () => {
   const [selected, setSelected] = useState<BackstageWorkflow | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const isMobile = useIsMobile();
-  const [view, setView] = useState<ViewMode>("pixel");
+  const [view, setView] = useState<ViewMode>("orbit");
   const effectiveView: ViewMode = isMobile ? "grid" : view;
 
   const activeWorkflows = useMemo(
