@@ -24,7 +24,7 @@ interface ProspectResult {
 }
 
 interface ProspectingMapProps {
-  businessType: string;
+  businessTypes: string[];
   city: string;
   onSearchResults: (results: ProspectResult[]) => void;
   onSearchStart: () => void;
