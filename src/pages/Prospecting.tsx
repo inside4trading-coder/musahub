@@ -51,9 +51,16 @@ const Prospecting = () => {
 
   // Map search state
   const [searchCity, setSearchCity] = useState('Madrid');
-  const [searchType, setSearchType] = useState(businessTypes[0]);
+  const [searchTypes, setSearchTypes] = useState<string[]>([businessTypes[0].value]);
   const [searchTrigger, setSearchTrigger] = useState(0);
   const [mapSearching, setMapSearching] = useState(false);
+
+  const toggleSearchType = (value: string) => {
+    setSearchTypes(prev =>
+      prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]
+    );
+  };
+
 
 
   const fetchProspects = useCallback(async () => {
