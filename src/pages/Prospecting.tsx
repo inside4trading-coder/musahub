@@ -14,12 +14,28 @@ import { ProspectingMap } from '@/components/ProspectingMap';
 
 type Prospect = Tables<'prospects'>;
 
-const businessTypes = [
-  'Restaurantes', 'Hoteles', 'Gimnasios', 'Peluquerías', 'Clínicas',
-  'Tiendas retail', 'Inmobiliarias', 'Abogados', 'Contadores',
-  'Farmacias', 'Dentistas', 'Bares',
-  'car_repair', 'auto_parts_store', 'car_dealer', 'car_wash', 'gas_station',
+const businessTypes: { value: string; label: string }[] = [
+  { value: 'Restaurantes', label: 'Restaurantes' },
+  { value: 'Hoteles', label: 'Hoteles' },
+  { value: 'Gimnasios', label: 'Gimnasios' },
+  { value: 'Peluquerías', label: 'Peluquerías' },
+  { value: 'Clínicas', label: 'Clínicas' },
+  { value: 'Tiendas retail', label: 'Tiendas retail' },
+  { value: 'Inmobiliarias', label: 'Inmobiliarias' },
+  { value: 'Abogados', label: 'Abogados' },
+  { value: 'Contadores', label: 'Contadores' },
+  { value: 'Farmacias', label: 'Farmacias' },
+  { value: 'Dentistas', label: 'Dentistas' },
+  { value: 'Bares', label: 'Bares' },
+  { value: 'car_repair', label: 'Talleres de autos' },
+  { value: 'auto_parts_store', label: 'Tiendas de repuestos' },
+  { value: 'car_dealer', label: 'Concesionarios' },
+  { value: 'car_wash', label: 'Lavado de autos' },
+  { value: 'gas_station', label: 'Gasolineras' },
 ];
+
+const labelFor = (value: string) =>
+  businessTypes.find(b => b.value === value)?.label ?? value;
 
 const Prospecting = () => {
   const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('prospecting_unlocked') === 'true');
