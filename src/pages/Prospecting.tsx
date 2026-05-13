@@ -484,7 +484,7 @@ const Prospecting = () => {
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm font-bold text-heading">{r.business_name}</p>
-                            <p className="text-xs text-muted-foreground">{r.category || '—'} · {r.address || r.city || '—'}</p>
+                            <p className="text-xs text-muted-foreground">{r.category ? labelFor(r.category) : '—'} · {r.address || r.city || '—'}</p>
                             {r.phone && <p className="text-xs text-body mt-1">📞 {r.phone}</p>}
                             {(r as any).email && <p className="text-xs text-body">✉️ {(r as any).email}</p>}
                             {(r as any).whatsapp && <p className="text-xs text-body">💬 {(r as any).whatsapp}</p>}
