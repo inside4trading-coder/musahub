@@ -14,12 +14,28 @@ import { ProspectingMap } from '@/components/ProspectingMap';
 
 type Prospect = Tables<'prospects'>;
 
-const businessTypes = [
-  'Restaurantes', 'Hoteles', 'Gimnasios', 'Peluquerías', 'Clínicas',
-  'Tiendas retail', 'Inmobiliarias', 'Abogados', 'Contadores',
-  'Farmacias', 'Dentistas', 'Bares',
-  'car_repair', 'auto_parts_store', 'car_dealer', 'car_wash', 'gas_station',
+const businessTypes: { value: string; label: string }[] = [
+  { value: 'Restaurantes', label: 'Restaurantes' },
+  { value: 'Hoteles', label: 'Hoteles' },
+  { value: 'Gimnasios', label: 'Gimnasios' },
+  { value: 'Peluquerías', label: 'Peluquerías' },
+  { value: 'Clínicas', label: 'Clínicas' },
+  { value: 'Tiendas retail', label: 'Tiendas retail' },
+  { value: 'Inmobiliarias', label: 'Inmobiliarias' },
+  { value: 'Abogados', label: 'Abogados' },
+  { value: 'Contadores', label: 'Contadores' },
+  { value: 'Farmacias', label: 'Farmacias' },
+  { value: 'Dentistas', label: 'Dentistas' },
+  { value: 'Bares', label: 'Bares' },
+  { value: 'car_repair', label: 'Talleres de autos' },
+  { value: 'auto_parts_store', label: 'Tiendas de repuestos' },
+  { value: 'car_dealer', label: 'Concesionarios' },
+  { value: 'car_wash', label: 'Lavado de autos' },
+  { value: 'gas_station', label: 'Gasolineras' },
 ];
+
+const labelFor = (value: string) =>
+  businessTypes.find(b => b.value === value)?.label ?? value;
 
 const Prospecting = () => {
   const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('prospecting_unlocked') === 'true');
@@ -35,9 +51,16 @@ const Prospecting = () => {
 
   // Map search state
   const [searchCity, setSearchCity] = useState('Madrid');
-  const [searchType, setSearchType] = useState(businessTypes[0]);
+  const [searchTypes, setSearchTypes] = useState<string[]>([businessTypes[0].value]);
   const [searchTrigger, setSearchTrigger] = useState(0);
   const [mapSearching, setMapSearching] = useState(false);
+
+  const toggleSearchType = (value: string) => {
+    setSearchTypes(prev =>
+      prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]
+    );
+  };
+
 
 
   const fetchProspects = useCallback(async () => {
@@ -360,23 +383,39 @@ const Prospecting = () => {
         {/* Map */}
         <div className="lg:col-span-3 rounded-2xl bg-card border border-border shadow-card overflow-hidden relative">
           <ProspectingMap
-            businessType={searchType}
+            businessTypes={searchTypes}
             city={searchCity}
             onSearchResults={handleMapResults}
             onSearchStart={() => setMapSearching(true)}
             triggerSearch={searchTrigger}
           />
-          <div className="absolute top-4 right-4 bg-card rounded-xl border border-border p-4 shadow-card w-64 z-10">
+          <div className="absolute top-4 right-4 bg-card rounded-xl border border-border p-4 shadow-card w-72 z-10">
             <div className="space-y-3">
               <div>
-                <Label className="text-xs font-semibold text-heading">Tipo de negocio</Label>
-                <select
-                  value={searchType}
-                  onChange={e => setSearchType(e.target.value)}
-                  className="w-full h-9 rounded-[10px] bg-muted border border-border px-3 text-sm mt-1"
-                >
-                  {businessTypes.map(t => <option key={t}>{t}</option>)}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="text-xs font-semibold text-heading">Tipos de negocio</Label>
+                  <span className="text-[10px] text-muted-foreground">{searchTypes.length} seleccionados</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-1.5 rounded-[10px] bg-muted border border-border">
+                  {businessTypes.map(t => {
+                    const active = searchTypes.includes(t.value);
+                    return (
+                      <button
+                        key={t.value}
+                        type="button"
+                        onClick={() => toggleSearchType(t.value)}
+                        className={cn(
+                          "text-[11px] px-2 py-1 rounded-full border transition-colors",
+                          active
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border bg-card text-body hover:border-primary/40"
+                        )}
+                      >
+                        {t.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <div>
                 <Label className="text-xs font-semibold text-heading">Ciudad</Label>
@@ -389,7 +428,7 @@ const Prospecting = () => {
               </div>
               <Button
                 className="w-full rounded-xl bg-primary text-primary-foreground font-semibold h-9 text-sm"
-                disabled={mapSearching || !searchCity.trim()}
+                disabled={mapSearching || !searchCity.trim() || searchTypes.length === 0}
                 onClick={() => setSearchTrigger(prev => prev + 1)}
               >
                 {mapSearching
@@ -445,7 +484,7 @@ const Prospecting = () => {
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm font-bold text-heading">{r.business_name}</p>
-                            <p className="text-xs text-muted-foreground">{r.category || '—'} · {r.address || r.city || '—'}</p>
+                            <p className="text-xs text-muted-foreground">{r.category ? labelFor(r.category) : '—'} · {r.address || r.city || '—'}</p>
                             {r.phone && <p className="text-xs text-body mt-1">📞 {r.phone}</p>}
                             {(r as any).email && <p className="text-xs text-body">✉️ {(r as any).email}</p>}
                             {(r as any).whatsapp && <p className="text-xs text-body">💬 {(r as any).whatsapp}</p>}
