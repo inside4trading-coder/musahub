@@ -18,6 +18,7 @@ const businessTypes = [
   'Restaurantes', 'Hoteles', 'Gimnasios', 'Peluquerías', 'Clínicas',
   'Tiendas retail', 'Inmobiliarias', 'Abogados', 'Contadores',
   'Farmacias', 'Dentistas', 'Bares',
+  'car_repair', 'auto_parts_store', 'car_dealer', 'car_wash', 'gas_station',
 ];
 
 const Prospecting = () => {
