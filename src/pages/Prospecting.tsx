@@ -383,23 +383,39 @@ const Prospecting = () => {
         {/* Map */}
         <div className="lg:col-span-3 rounded-2xl bg-card border border-border shadow-card overflow-hidden relative">
           <ProspectingMap
-            businessType={searchType}
+            businessTypes={searchTypes}
             city={searchCity}
             onSearchResults={handleMapResults}
             onSearchStart={() => setMapSearching(true)}
             triggerSearch={searchTrigger}
           />
-          <div className="absolute top-4 right-4 bg-card rounded-xl border border-border p-4 shadow-card w-64 z-10">
+          <div className="absolute top-4 right-4 bg-card rounded-xl border border-border p-4 shadow-card w-72 z-10">
             <div className="space-y-3">
               <div>
-                <Label className="text-xs font-semibold text-heading">Tipo de negocio</Label>
-                <select
-                  value={searchType}
-                  onChange={e => setSearchType(e.target.value)}
-                  className="w-full h-9 rounded-[10px] bg-muted border border-border px-3 text-sm mt-1"
-                >
-                  {businessTypes.map(t => <option key={t}>{t}</option>)}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="text-xs font-semibold text-heading">Tipos de negocio</Label>
+                  <span className="text-[10px] text-muted-foreground">{searchTypes.length} seleccionados</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-1.5 rounded-[10px] bg-muted border border-border">
+                  {businessTypes.map(t => {
+                    const active = searchTypes.includes(t.value);
+                    return (
+                      <button
+                        key={t.value}
+                        type="button"
+                        onClick={() => toggleSearchType(t.value)}
+                        className={cn(
+                          "text-[11px] px-2 py-1 rounded-full border transition-colors",
+                          active
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border bg-card text-body hover:border-primary/40"
+                        )}
+                      >
+                        {t.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <div>
                 <Label className="text-xs font-semibold text-heading">Ciudad</Label>
@@ -412,7 +428,7 @@ const Prospecting = () => {
               </div>
               <Button
                 className="w-full rounded-xl bg-primary text-primary-foreground font-semibold h-9 text-sm"
-                disabled={mapSearching || !searchCity.trim()}
+                disabled={mapSearching || !searchCity.trim() || searchTypes.length === 0}
                 onClick={() => setSearchTrigger(prev => prev + 1)}
               >
                 {mapSearching
