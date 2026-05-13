@@ -160,63 +160,65 @@ export const ProspectingMap = ({ businessTypes, city, onSearchResults, onSearchS
       const seenIds = new Set<string>();
 
       for (const bounds of subBounds) {
-        try {
-          const request = {
-            textQuery: businessType,
-            fields: ['displayName', 'formattedAddress', 'location', 'rating', 'userRatingCount', 'nationalPhoneNumber', 'websiteURI', 'id'],
-            locationRestriction: bounds,
-            maxResultCount: 20,
-          };
+        for (const type of businessTypes) {
+          try {
+            const request = {
+              textQuery: type,
+              fields: ['displayName', 'formattedAddress', 'location', 'rating', 'userRatingCount', 'nationalPhoneNumber', 'websiteURI', 'id'],
+              locationRestriction: bounds,
+              maxResultCount: 20,
+            };
 
-          // @ts-ignore
-          const { places } = await Place.searchByText(request);
-          if (!places) continue;
+            // @ts-ignore
+            const { places } = await Place.searchByText(request);
+            if (!places) continue;
 
-          for (const place of places as any[]) {
-            const placeId = place.id;
-            if (seenIds.has(placeId)) continue;
-            seenIds.add(placeId);
+            for (const place of places as any[]) {
+              const placeId = place.id;
+              if (seenIds.has(placeId)) continue;
+              seenIds.add(placeId);
 
-            // Filter by polygon if drawn
-            if (polygonPath && place.location) {
-              const inside = google.maps.geometry?.poly?.containsLocation(place.location, currentPolygon.current!);
-              if (!inside) continue;
+              // Filter by polygon if drawn
+              if (polygonPath && place.location) {
+                const inside = google.maps.geometry?.poly?.containsLocation(place.location, currentPolygon.current!);
+                if (!inside) continue;
+              }
+
+              const lat = place.location?.lat() ?? 0;
+              const lng = place.location?.lng() ?? 0;
+
+              const marker = new google.maps.Marker({
+                position: { lat, lng },
+                map,
+                title: place.displayName,
+                icon: {
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: 7,
+                  fillColor: '#84cc16',
+                  fillOpacity: 0.9,
+                  strokeColor: '#fff',
+                  strokeWeight: 2,
+                },
+              });
+              markersRef.current.push(marker);
+
+              allResults.push({
+                business_name: place.displayName || 'Sin nombre',
+                address: place.formattedAddress || '',
+                phone: place.nationalPhoneNumber || null,
+                website: place.websiteURI || null,
+                rating: place.rating ?? null,
+                review_count: place.userRatingCount ?? null,
+                latitude: lat,
+                longitude: lng,
+                category: type,
+                city: city,
+                polygon_data: polygonData,
+              });
             }
-
-            const lat = place.location?.lat() ?? 0;
-            const lng = place.location?.lng() ?? 0;
-
-            const marker = new google.maps.Marker({
-              position: { lat, lng },
-              map,
-              title: place.displayName,
-              icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 7,
-                fillColor: '#84cc16',
-                fillOpacity: 0.9,
-                strokeColor: '#fff',
-                strokeWeight: 2,
-              },
-            });
-            markersRef.current.push(marker);
-
-            allResults.push({
-              business_name: place.displayName || 'Sin nombre',
-              address: place.formattedAddress || '',
-              phone: place.nationalPhoneNumber || null,
-              website: place.websiteURI || null,
-              rating: place.rating ?? null,
-              review_count: place.userRatingCount ?? null,
-              latitude: lat,
-              longitude: lng,
-              category: businessType,
-              city: city,
-              polygon_data: polygonData,
-            });
+          } catch (e) {
+            console.warn('Sub-search failed:', e);
           }
-        } catch (e) {
-          console.warn('Sub-search failed:', e);
         }
       }
 
@@ -227,7 +229,7 @@ export const ProspectingMap = ({ businessTypes, city, onSearchResults, onSearchS
       setSearching(false);
       onSearchResults([]);
     }
-  }, [mapReady, businessType, city, onSearchResults, onSearchStart]);
+  }, [mapReady, businessTypes, city, onSearchResults, onSearchStart]);
 
   // React to search trigger
   useEffect(() => {
