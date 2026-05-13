@@ -52,7 +52,7 @@ function loadGoogleMaps(): Promise<void> {
   });
 }
 
-export const ProspectingMap = ({ businessType, city, onSearchResults, onSearchStart, triggerSearch }: ProspectingMapProps) => {
+export const ProspectingMap = ({ businessTypes, city, onSearchResults, onSearchStart, triggerSearch }: ProspectingMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);
   const drawingManager = useRef<google.maps.drawing.DrawingManager | null>(null);
