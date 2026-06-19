@@ -6,6 +6,33 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
+const toProductionWebhookUrl = (url: string) => url.trim().replace("/webhook-test/", "/webhook/");
+
+const toAuthorizationHeader = (token?: string) => {
+  const value = token?.trim();
+  if (!value) return undefined;
+  return /^Bearer\s+/i.test(value) ? value : `Bearer ${value}`;
+};
+
+const upstreamFailureResponse = (status: number, detail: string) => new Response(
+  JSON.stringify({
+    generated_at: new Date().toISOString(),
+    total_workflows: 0,
+    workflows: [],
+    upstream_error: {
+      status,
+      message: `n8n upstream HTTP ${status}`,
+      detail: detail.slice(0, 1000),
+      hint: status === 403
+        ? "Revisa que el Header Auth de n8n use Authorization y el mismo Bearer token que N8N_BACKSTAGE_TOKEN."
+        : status === 404
+          ? "Usa la Production URL /webhook/backstage-sync y activa el workflow en n8n."
+          : "Revisa la ejecución del workflow en n8n.",
+    },
+  }),
+  { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" } },
+);
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -26,9 +53,10 @@ serve(async (req) => {
       "Content-Type": "application/json",
       Accept: "application/json",
     };
-    if (token) headers.Authorization = `Bearer ${token}`;
+    const authorization = toAuthorizationHeader(token);
+    if (authorization) headers.Authorization = authorization;
 
-    const upstream = await fetch(webhookUrl, {
+    const upstream = await fetch(toProductionWebhookUrl(webhookUrl), {
       method: "POST",
       headers,
       body: JSON.stringify({ source: "musa-hub", requested_at: new Date().toISOString() }),
@@ -38,10 +66,7 @@ serve(async (req) => {
 
     if (!upstream.ok) {
       console.error("n8n upstream error", upstream.status, text);
-      return new Response(
-        JSON.stringify({ error: `n8n upstream HTTP ${upstream.status}`, detail: text }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return upstreamFailureResponse(upstream.status, text);
     }
 
     let json: unknown;
