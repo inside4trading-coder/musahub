@@ -532,6 +532,40 @@ export type Database = {
       }
     }
     Functions: {
+      get_all_active_deals: {
+        Args: never
+        Returns: {
+          archived: boolean | null
+          assigned_to: string | null
+          category: string | null
+          company_name: string
+          contact_name: string
+          created_at: string
+          created_by: string | null
+          deal_value: number
+          email: string | null
+          facebook: string | null
+          id: string
+          instagram: string | null
+          linkedin: string | null
+          next_step: string | null
+          next_step_date: string | null
+          notes: string | null
+          phone: string | null
+          stage: string
+          tags: string[] | null
+          tiktok: string | null
+          updated_at: string
+          website: string | null
+          whatsapp: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "deals"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
