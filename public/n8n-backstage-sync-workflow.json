@@ -1,0 +1,102 @@
+{
+  "name": "Musa Hub — Backstage Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🎭 Musa Hub — Backstage Sync\n\nExpone los workflows activos de esta instancia n8n en el formato que consume el módulo **Backstage** de Musa Hub.\n\n### Setup (3 pasos)\n1. **Credencial n8n API**: Settings → n8n API → Create API key. Asígnala al nodo `Get n8n Workflows`.\n2. **Credencial Header Auth**: crea una credencial `Header Auth` con `Name = Authorization`, `Value = Bearer <TU_TOKEN>`. Asígnala al nodo `Webhook`.\n3. Activa el workflow, copia la **Production URL** del webhook y entrégala a Musa Hub junto con el token.\n\nMusa Hub guarda ambos como secretos: `N8N_BACKSTAGE_WEBHOOK_URL` y `N8N_BACKSTAGE_TOKEN`.",
+        "height": 360,
+        "width": 460
+      },
+      "id": "sticky-1",
+      "name": "README",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-200, -40]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "backstage-sync",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [320, 220],
+      "webhookId": "musa-backstage-sync"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.N8N_HOST || 'http://localhost:5678' }}/api/v1/workflows",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "active", "value": "true" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-list-workflows",
+      "name": "Get n8n Workflows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [560, 220]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transform n8n workflows API response → Musa Hub BackstageResponse\nconst raw = $input.first().json;\nconst workflows = Array.isArray(raw.data) ? raw.data : (Array.isArray(raw) ? raw : []);\n\nconst INTEGRATION_MAP = {\n  telegram: 'Telegram',\n  telegramTrigger: 'Telegram',\n  openAi: 'OpenAI',\n  openAiChat: 'OpenAI',\n  supabase: 'Supabase',\n  postgres: 'Postgres',\n  gmail: 'Gmail',\n  googleSheets: 'Google Sheets',\n  googleCalendar: 'Google Calendar',\n  googleDrive: 'Google Drive',\n  brevo: 'Brevo',\n  sendInBlue: 'Brevo',\n  emailSend: 'SMTP',\n  slack: 'Slack',\n  notion: 'Notion',\n  airtable: 'Airtable',\n  hubspot: 'HubSpot',\n  whatsApp: 'WhatsApp',\n  httpRequest: 'HTTP',\n  webhook: 'Webhook',\n  zadarma: 'Zadarma',\n};\n\nconst TRIGGER_MAP = {\n  webhook: 'webhook',\n  telegramTrigger: 'telegram',\n  scheduleTrigger: 'schedule',\n  cron: 'schedule',\n  emailReadImap: 'email',\n  gmailTrigger: 'email',\n  manualTrigger: 'manual',\n  formTrigger: 'form',\n  executeWorkflowTrigger: 'subflow',\n  errorTrigger: 'error',\n};\n\nfunction shortType(t) {\n  if (!t) return '';\n  return String(t).split('.').pop().replace(/Trigger$/, 'Trigger');\n}\n\nfunction prettyIntegration(t) {\n  const s = shortType(t).replace(/Trigger$/, '');\n  if (INTEGRATION_MAP[s]) return INTEGRATION_MAP[s];\n  // skip core flow-control nodes\n  const skip = new Set(['set','if','switch','merge','splitInBatches','code','function','noOp','stickyNote','wait','respondToWebhook','executeWorkflow','aggregate','itemLists','dateTime','filter']);\n  if (skip.has(s)) return null;\n  // Title-case fallback\n  return s.charAt(0).toUpperCase() + s.slice(1).replace(/([A-Z])/g, ' $1').trim();\n}\n\nfunction detectTrigger(t) {\n  const s = shortType(t);\n  return TRIGGER_MAP[s] || null;\n}\n\nconst out = workflows.map((wf) => {\n  const nodes = Array.isArray(wf.nodes) ? wf.nodes : [];\n  const connections = wf.connections || {};\n\n  // triggers\n  const triggers = Array.from(new Set(\n    nodes.map((n) => detectTrigger(n.type)).filter(Boolean)\n  ));\n\n  // integrations\n  const integrations = Array.from(new Set(\n    nodes.map((n) => prettyIntegration(n.type)).filter(Boolean)\n  ));\n\n  // endpoints (webhook nodes)\n  const endpoints = nodes\n    .filter((n) => shortType(n.type) === 'webhook')\n    .map((n) => ({\n      path: '/webhook/' + (n.parameters?.path || ''),\n      method: (n.parameters?.httpMethod || 'GET').toUpperCase(),\n    }));\n\n  // schedule (first scheduleTrigger / cron expression)\n  let schedule;\n  const sched = nodes.find((n) => ['scheduleTrigger','cron'].includes(shortType(n.type)));\n  if (sched) {\n    const rules = sched.parameters?.rule?.interval || sched.parameters?.triggerTimes?.item;\n    if (Array.isArray(rules) && rules.length) {\n      const r = rules[0];\n      schedule = r.cronExpression || r.expression || JSON.stringify(r);\n    } else {\n      schedule = 'configurado en n8n';\n    }\n  }\n\n  // description (first sticky note or workflow meta)\n  let description = wf.meta?.description || '';\n  if (!description) {\n    const sticky = nodes.find((n) => shortType(n.type) === 'stickyNote' && n.parameters?.content);\n    if (sticky) {\n      description = String(sticky.parameters.content)\n        .replace(/^#+\\s*/gm, '')\n        .split('\\n')\n        .map((l) => l.trim())\n        .filter(Boolean)[0] || '';\n    }\n  }\n\n  // graph\n  const graphNodes = nodes\n    .filter((n) => shortType(n.type) !== 'stickyNote')\n    .map((n) => ({ id: String(n.id || n.name), label: n.name }));\n\n  const idByName = {};\n  nodes.forEach((n) => { idByName[n.name] = String(n.id || n.name); });\n\n  const edges = [];\n  Object.entries(connections).forEach(([fromName, outs]) => {\n    const mainOuts = (outs && outs.main) || [];\n    mainOuts.forEach((arr) => {\n      (arr || []).forEach((conn) => {\n        if (!conn || !conn.node) return;\n        const from = idByName[fromName];\n        const to = idByName[conn.node];\n        if (from && to) edges.push({ from, to });\n      });\n    });\n  });\n\n  return {\n    id: String(wf.id),\n    name: wf.name,\n    active: !!wf.active,\n    triggers,\n    schedule,\n    endpoints: endpoints.length ? endpoints : undefined,\n    integrations,\n    tags: Array.isArray(wf.tags) ? wf.tags.map((t) => t.name || t).filter(Boolean) : [],\n    description,\n    graph: { nodes: graphNodes, edges },\n  };\n});\n\nreturn [{\n  json: {\n    generated_at: new Date().toISOString(),\n    total_workflows: out.length,\n    workflows: out,\n  },\n}];"
+      },
+      "id": "code-transform",
+      "name": "Transform → BackstageResponse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Cache-Control", "value": "no-store" }
+            ]
+          }
+        }
+      },
+      "id": "respond-node",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1060, 220]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Get n8n Workflows", "type": "main", "index": 0 }]]
+    },
+    "Get n8n Workflows": {
+      "main": [[{ "node": "Transform → BackstageResponse", "type": "main", "index": 0 }]]
+    },
+    "Transform → BackstageResponse": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {
+    "description": "Expone los workflows activos de n8n al módulo Backstage de Musa Hub.",
+    "templateCredsSetupCompleted": false
+  },
+  "tags": [
+    { "name": "musa-hub" },
+    { "name": "backstage" }
+  ]
+}
