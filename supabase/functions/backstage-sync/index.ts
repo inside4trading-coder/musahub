@@ -11,7 +11,10 @@ const toProductionWebhookUrl = (url: string) => url.trim().replace("/webhook-tes
 const toAuthorizationHeader = (token?: string) => {
   const value = token?.trim();
   if (!value) return undefined;
-  return /^Bearer\s+/i.test(value) ? value : `Bearer ${value}`;
+  // Send the token exactly as stored. n8n Header Auth compares the full value verbatim,
+  // so the secret should contain whatever you put in the "Value" field of the credential
+  // (e.g. "Bearer xyz" if that's what n8n expects, or just "xyz" otherwise).
+  return value;
 };
 
 const upstreamFailureResponse = (status: number, detail: string) => new Response(
