@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Briefcase, Euro, Users, Mail, BookOpen, ArrowRight, Loader2, Trophy } from 'lucide-react';
+import { Briefcase, Euro, Users, Mail, BookOpen, ArrowRight, Trophy, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { KpiCard } from '@/components/dashboard/KpiCard';
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
+import { EmptyState } from '@/components/EmptyState';
+import { notify } from '@/lib/toast';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow, format, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -208,6 +212,7 @@ const Dashboard = () => {
         setDailyStats(chartData);
       } catch (error) {
         console.error('Dashboard activity error:', error);
+        notify.error('No se pudo cargar el dashboard', { description: 'Reintenta en unos segundos.' });
         setKpis({
           dealCount: 0,
           pipelineValue: 0,
@@ -225,13 +230,35 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-  const kpiCards = kpis ? [
-    { label: 'Deals en Pipeline', value: String(kpis.dealCount), icon: Briefcase },
-    { label: 'Valor Pipeline', value: `€${kpis.pipelineValue.toLocaleString()}`, icon: Euro },
-    { label: 'Negocios Ganados', value: `€${kpis.wonDealsValue.toLocaleString()}`, icon: Trophy },
-    { label: 'Llamadas válidas este mes', value: String(kpis.validCallsThisMonth), icon: Users },
-    { label: 'Campañas este mes', value: String(kpis.campaignsThisMonth), icon: Mail },
-  ] : [];
+  // Sparkline + delta para la KPI con serie temporal disponible (llamadas válidas, 14 días)
+  const validSeries = dailyStats.map((d) => d.calls);
+  const sum7 = (arr: number[]) => arr.reduce((s, v) => s + v, 0);
+  const last7 = sum7(validSeries.slice(-7));
+  const prev7 = sum7(validSeries.slice(-14, -7));
+  const validDelta =
+    validSeries.length >= 14
+      ? prev7 === 0
+        ? last7 > 0
+          ? 100
+          : 0
+        : ((last7 - prev7) / prev7) * 100
+      : null;
+
+  const kpiCards = kpis
+    ? [
+        { label: 'Deals en Pipeline', value: String(kpis.dealCount), icon: Briefcase },
+        { label: 'Valor Pipeline', value: `€${kpis.pipelineValue.toLocaleString()}`, icon: Euro },
+        { label: 'Negocios Ganados', value: `€${kpis.wonDealsValue.toLocaleString()}`, icon: Trophy },
+        {
+          label: 'Llamadas válidas este mes',
+          value: String(kpis.validCallsThisMonth),
+          icon: Users,
+          series: validSeries,
+          delta: validDelta,
+        },
+        { label: 'Campañas este mes', value: String(kpis.campaignsThisMonth), icon: Mail },
+      ]
+    : [];
 
   const quickActions = [
     { label: 'Nuevo Deal', icon: Briefcase, path: '/crm', color: 'bg-primary/10 text-primary' },
@@ -247,11 +274,7 @@ const Dashboard = () => {
   const emailsSum = dailyStats.reduce((s, d) => s + d.emails, 0);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
@@ -265,21 +288,7 @@ const Dashboard = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         {kpiCards.map((kpi, i) => (
-          <motion.div
-            key={kpi.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="gradient-border-top rounded-2xl bg-card border border-border p-5 shadow-card card-hover"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="rounded-xl bg-primary/10 p-2">
-                <kpi.icon className="h-5 w-5 text-primary" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-heading">{kpi.value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{kpi.label}</p>
-          </motion.div>
+          <KpiCard key={kpi.label} {...kpi} index={i} />
         ))}
       </div>
 
@@ -335,7 +344,11 @@ const Dashboard = () => {
         <div className="lg:col-span-2 rounded-2xl bg-card border border-border p-6 shadow-card">
           <h3 className="text-lg font-bold text-heading lime-dot mb-4">Actividad Reciente</h3>
           {activity.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">No hay actividad reciente</p>
+            <EmptyState
+              icon={Activity}
+              title="Sin actividad reciente"
+              description="Cuando muevas deals o registres llamadas válidas, aparecerán aquí."
+            />
           ) : (
             <div className="space-y-2">
               {activity.map((item, i) => (
