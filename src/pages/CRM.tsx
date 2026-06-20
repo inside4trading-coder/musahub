@@ -369,7 +369,7 @@ const CRM = () => {
               <div className="h-1 gradient-accent rounded-full -mt-2 mb-4" />
               <DialogHeader><DialogTitle className="text-heading">Nuevo Deal</DialogTitle></DialogHeader>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs font-semibold text-heading">Empresa *</Label>
                     <Input value={newDeal.company_name} onChange={e => setNewDeal(p => ({ ...p, company_name: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" />
@@ -379,7 +379,7 @@ const CRM = () => {
                     <Input value={newDeal.contact_name} onChange={e => setNewDeal(p => ({ ...p, contact_name: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs font-semibold text-heading">Email</Label>
                     <Input value={newDeal.email || ''} onChange={e => setNewDeal(p => ({ ...p, email: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" />
@@ -389,7 +389,7 @@ const CRM = () => {
                     <Input value={newDeal.phone || ''} onChange={e => setNewDeal(p => ({ ...p, phone: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs font-semibold text-heading">Valor (€) *</Label>
                     <Input type="number" value={newDeal.deal_value} onChange={e => setNewDeal(p => ({ ...p, deal_value: Number(e.target.value) }))} className="rounded-[10px] bg-muted border-border mt-1" />
@@ -421,37 +421,39 @@ const CRM = () => {
         </div>
 
         {/* Search & Filters */}
-        <div className="mb-4 flex gap-3 items-center flex-wrap">
-          <div className="relative max-w-sm flex-1">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:max-w-sm sm:flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Buscar por empresa o contacto..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 rounded-[10px] bg-muted border-border" />
           </div>
-          <select
-            value={ownerFilter}
-            onChange={e => setOwnerFilter(e.target.value)}
-            className="h-10 rounded-[10px] bg-muted border border-border px-3 text-sm text-heading focus:border-primary focus:outline-none"
-          >
-            <option value="">Todos los owners</option>
-            {profiles.map(p => (
-              <option key={p.id} value={p.id}>{p.full_name || 'Sin nombre'}</option>
-            ))}
-          </select>
-          <Button
-            variant={sortByNextStep ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSortByNextStep(v => !v)}
-            className="rounded-[10px] text-xs h-10 gap-1"
-          >
-            <Calendar className="h-3.5 w-3.5" /> Ordenar por próximo paso
-          </Button>
-          <Button
-            variant={noActivityFilter ? 'destructive' : 'outline'}
-            size="sm"
-            onClick={() => setNoActivityFilter(v => !v)}
-            className="rounded-[10px] text-xs h-10 gap-1"
-          >
-            <AlertCircle className="h-3.5 w-3.5" /> Sin actividad
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={ownerFilter}
+              onChange={e => setOwnerFilter(e.target.value)}
+              className="h-10 flex-1 sm:flex-none rounded-[10px] bg-muted border border-border px-3 text-sm text-heading focus:border-primary focus:outline-none"
+            >
+              <option value="">Todos los owners</option>
+              {profiles.map(p => (
+                <option key={p.id} value={p.id}>{p.full_name || 'Sin nombre'}</option>
+              ))}
+            </select>
+            <Button
+              variant={sortByNextStep ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortByNextStep(v => !v)}
+              className="rounded-[10px] text-xs h-10 gap-1"
+            >
+              <Calendar className="h-3.5 w-3.5" /> Próximo paso
+            </Button>
+            <Button
+              variant={noActivityFilter ? 'destructive' : 'outline'}
+              size="sm"
+              onClick={() => setNoActivityFilter(v => !v)}
+              className="rounded-[10px] text-xs h-10 gap-1"
+            >
+              <AlertCircle className="h-3.5 w-3.5" /> Sin actividad
+            </Button>
+          </div>
         </div>
 
         {/* Kanban */}
@@ -487,7 +489,7 @@ const CRM = () => {
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className={cn("min-w-[280px] w-[280px] rounded-2xl p-3 transition-colors shrink-0", snapshot.isDraggingOver ? "bg-primary/5" : "bg-muted/50")}
+                        className={cn("min-w-[84vw] w-[84vw] sm:min-w-[280px] sm:w-[280px] rounded-2xl p-3 transition-colors shrink-0", snapshot.isDraggingOver ? "bg-primary/5" : "bg-muted/50")}
                       >
                         <div className="flex items-center justify-between mb-3 px-1">
                           <div className="flex items-center gap-2">
@@ -626,7 +628,7 @@ const CRM = () => {
 
         {/* Deal detail drawer */}
         <Sheet open={!!selectedDeal} onOpenChange={() => { setSelectedDeal(null); setEditing(false); }}>
-          <SheetContent className="rounded-l-2xl w-[460px] sm:max-w-[460px] overflow-y-auto p-0">
+          <SheetContent className="rounded-l-2xl w-full sm:w-[460px] sm:max-w-[460px] overflow-y-auto p-0">
             {selectedDeal && !editing && (
               <div className="p-6">
                 <div className="h-1 gradient-accent rounded-full mb-4" />
@@ -910,7 +912,7 @@ const CRM = () => {
                     <Label className="text-xs font-semibold text-heading">Contacto</Label>
                     <Input value={editForm.contact_name || ''} onChange={e => setEditForm(p => ({ ...p, contact_name: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs font-semibold text-heading">Email</Label>
                       <Input value={editForm.email || ''} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" />
@@ -920,7 +922,7 @@ const CRM = () => {
                       <Input value={editForm.phone || ''} onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs font-semibold text-heading">WhatsApp</Label>
                       <Input value={editForm.whatsapp || ''} onChange={e => setEditForm(p => ({ ...p, whatsapp: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" />
@@ -930,7 +932,7 @@ const CRM = () => {
                       <Input value={editForm.website || ''} onChange={e => setEditForm(p => ({ ...p, website: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs font-semibold text-heading">Valor (€)</Label>
                       <Input type="number" value={editForm.deal_value ?? 0} onChange={e => setEditForm(p => ({ ...p, deal_value: Number(e.target.value) }))} className="rounded-[10px] bg-muted border-border mt-1" />
@@ -950,7 +952,7 @@ const CRM = () => {
                     </select>
                   </div>
                   <p className="label-style pt-2">Redes Sociales</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs font-semibold text-heading">Instagram</Label>
                       <Input value={editForm.instagram || ''} onChange={e => setEditForm(p => ({ ...p, instagram: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" placeholder="https://instagram.com/..." />
@@ -960,7 +962,7 @@ const CRM = () => {
                       <Input value={editForm.facebook || ''} onChange={e => setEditForm(p => ({ ...p, facebook: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" placeholder="https://facebook.com/..." />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs font-semibold text-heading">LinkedIn</Label>
                       <Input value={editForm.linkedin || ''} onChange={e => setEditForm(p => ({ ...p, linkedin: e.target.value }))} className="rounded-[10px] bg-muted border-border mt-1" placeholder="https://linkedin.com/..." />
