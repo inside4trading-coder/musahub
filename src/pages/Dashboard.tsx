@@ -244,11 +244,11 @@ const Dashboard = () => {
         : ((last7 - prev7) / prev7) * 100
       : null;
 
+  // Los importes (pipeline / ganado) viven ahora en el hero como punto focal;
+  // el strip de KPIs queda para los conteos de actividad.
   const kpiCards = kpis
     ? [
         { label: 'Deals en Pipeline', value: String(kpis.dealCount), icon: Briefcase },
-        { label: 'Valor Pipeline', value: `€${kpis.pipelineValue.toLocaleString()}`, icon: Euro },
-        { label: 'Negocios Ganados', value: `€${kpis.wonDealsValue.toLocaleString()}`, icon: Trophy },
         {
           label: 'Llamadas válidas este mes',
           value: String(kpis.validCallsThisMonth),
@@ -279,14 +279,34 @@ const Dashboard = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-      {/* Hero */}
-      <div className="rounded-2xl gradient-hero p-8 mb-6">
-        <h1 className="text-2xl font-bold text-heading lime-dot">Dashboard</h1>
-        <p className="text-body mt-1">Bienvenido de vuelta. Aquí tienes un resumen de tu agencia.</p>
+      {/* Hero — punto focal con las métricas de dinero */}
+      <div className="rounded-2xl gradient-hero p-8 mb-6 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-heading lime-dot">Dashboard</h1>
+          <p className="text-body mt-1">Bienvenido de vuelta. Aquí tienes un resumen de tu agencia.</p>
+        </div>
+        <div className="flex items-end gap-8">
+          <div>
+            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Euro className="h-3.5 w-3.5" aria-hidden="true" /> Valor en pipeline
+            </p>
+            <p className="text-3xl sm:text-4xl font-extrabold text-heading leading-none mt-1.5">
+              €{(kpis?.pipelineValue ?? 0).toLocaleString()}
+            </p>
+          </div>
+          <div>
+            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Trophy className="h-3.5 w-3.5" aria-hidden="true" /> Ganado
+            </p>
+            <p className="text-3xl sm:text-4xl font-extrabold text-primary leading-none mt-1.5">
+              €{(kpis?.wonDealsValue ?? 0).toLocaleString()}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {kpiCards.map((kpi, i) => (
           <KpiCard key={kpi.label} {...kpi} index={i} />
         ))}
