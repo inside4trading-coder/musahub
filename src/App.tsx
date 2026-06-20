@@ -1,10 +1,12 @@
-import { Toaster } from "@/components/ui/toaster";
+﻿import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { MotionConfig } from "framer-motion";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import AppLayout from "@/components/AppLayout";
 import Login from "./pages/Login";
 import Index from "./pages/Index";
@@ -27,9 +29,10 @@ const ProtectedLayout = () => (
   </ProtectedRoute>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
+const AppWithMotion = () => {
+  const reduced = useReducedMotion();
+  return (
+    <MotionConfig reducedMotion={reduced ? "always" : "never"}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -41,7 +44,6 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/crm" element={<CRM />} />
               <Route path="/prospecting" element={<Prospecting />} />
-              
               <Route path="/email-campaigns" element={<EmailCampaigns />} />
               <Route path="/email-metrics" element={<EmailMetrics />} />
               <Route path="/calls" element={<Calls />} />
@@ -53,6 +55,14 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+    </MotionConfig>
+  );
+};
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <AppWithMotion />
     </AuthProvider>
   </QueryClientProvider>
 );
