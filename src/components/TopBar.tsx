@@ -2,6 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Bell, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +31,9 @@ export const TopBar = () => {
       </div>
 
       <div className="flex items-center gap-3 ml-auto">
+        {/* Theme toggle */}
+        <ThemeToggle />
+
         {/* Notifications */}
         <button className="relative p-2 rounded-xl hover:bg-muted transition-colors">
           <Bell className="h-5 w-5 text-muted-foreground" />

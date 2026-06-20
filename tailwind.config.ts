@@ -75,6 +75,20 @@ export default {
         warning: "hsl(var(--color-warning))",
         error: "hsl(var(--color-error))",
         info: "hsl(var(--color-info))",
+        chart: {
+          1: "hsl(var(--chart-1))",
+          2: "hsl(var(--chart-2))",
+          3: "hsl(var(--chart-3))",
+          4: "hsl(var(--chart-4))",
+          5: "hsl(var(--chart-5))",
+        },
+      },
+      fontSize: {
+        display: ["2.5rem", { lineHeight: "1.1", letterSpacing: "-0.03em", fontWeight: "800" }],
+        h1: ["1.875rem", { lineHeight: "1.15", letterSpacing: "-0.02em", fontWeight: "700" }],
+        h2: ["1.5rem", { lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "700" }],
+        h3: ["1.25rem", { lineHeight: "1.3", letterSpacing: "-0.01em", fontWeight: "600" }],
+        caption: ["0.8125rem", { lineHeight: "1.5" }],
       },
       borderRadius: {
         lg: "var(--radius)",
