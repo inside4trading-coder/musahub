@@ -138,5 +138,3 @@ Proyecto privado — © Musa Hub. Todos los derechos reservados.
 ---
 
 <p align="center">
-  <em>Construido con ❤️, café y demasiados sprites en <a href="https://lovable.dev">Lovable</a>.</em>
-</p>
