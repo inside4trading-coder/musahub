@@ -31,6 +31,8 @@
 ### 🗺️ Prospecting Tool
 - Búsqueda geográfica por **polígonos** sobre Google Maps.
 - Generación de PINs seguros y enriquecimiento de contactos vía edge function `scrape-contacts`.
+- **Categorías de prospección con multi-selección** — un mismo lead puede clasificarse en más de una categoría a la vez.
+- **Snippets con vista previa** — fragmentos de mensaje reutilizables para no reescribir la prospección desde cero.
 
 ### 📞 Calls Analytics
 - Integración nativa con **Zadarma**: sincronización, estados, duración y grabaciones.
@@ -47,9 +49,12 @@
 
 ### 🎭 Backstage
 - Visualización de los workflows n8n como **agentes vivos**:
-  - **Grid View** — listado clásico con detalle.
-  - **Orbit View** — sistema solar pixel-art con planetas, satélites y skybox.
-  - **Pixel Office** — oficina isométrica donde cada agente se mueve, lee, trabaja o patrulla según su trigger.
+  - **Grid View** — listado clásico con detalle, filtros y panel de workflow (`WorkflowCard`, `WorkflowFilters`, `WorkflowDetailPanel`, `FlowDiagram`).
+  - **Orbit View** — sistema solar pixel-art en 3D (React Three Fiber) con planetas, satélites y skybox.
+- Sincronización periódica del estado de los workflows vía la edge function `backstage-sync`.
+
+> **Nota:** la vista **Pixel Office** (oficina isométrica) que documentaban versiones
+> anteriores de este README fue descontinuada. Solo quedan Grid View y Orbit View.
 
 ### 🔐 Auth & RBAC
 - Supabase Auth con roles **admin** y **team**.
@@ -77,7 +82,7 @@
 - **Lime Green** `#8DC63F` — primario, energía y acción.
 - **Turquoise** `#4ECDC4` — secundario, claridad y datos.
 - Tipografía bold, esquinas redondeadas, jerarquía clara.
-- Pixel-art retro reservado para el Backstage (Orbit + Office).
+- Pixel-art retro reservado para el Backstage (Orbit View).
 
 ---
 
@@ -85,6 +90,7 @@
 
 | Función | Propósito |
 |---------|-----------|
+| `backstage-sync` | Sincroniza el estado de los workflows de n8n mostrados en el Backstage |
 | `brevo-email-stats` | KPIs y bounces de Brevo |
 | `email-campaign-callback` | Webhook entrante desde n8n |
 | `get-call-recording` | Resuelve y sirve audios Zadarma |
@@ -109,12 +115,12 @@
 ```
 src/
 ├── components/
-│   ├── backstage/        # Grid · Orbit · Pixel Office
+│   ├── backstage/        # Grid View · Orbit View (3D) — Pixel Office descontinuada
 │   ├── ui/               # shadcn primitives
 │   └── ...
 ├── pages/                # Dashboard · CRM · Calls · Prospecting · Backstage...
 ├── lib/
-│   └── pixel-office/     # Motor pixel-art (sprites, layout, engine)
+│   └── pixel-office/     # Motor pixel-art heredado (sprites, layout) — sin uso activo en UI
 ├── integrations/supabase # Cliente + types autogenerados
 └── contexts/             # AuthContext, etc.
 supabase/functions/       # Edge functions (Deno)
@@ -134,7 +140,3 @@ supabase/functions/       # Edge functions (Deno)
 ## 📜 Licencia
 
 Proyecto privado — © Musa Hub. Todos los derechos reservados.
-
----
-
-<p align="center">
