@@ -86,6 +86,82 @@
 
 ---
 
+## 🏗️ Arquitectura
+
+### Hooks de datos
+
+| Hook | Para qué |
+|---|---|
+| `useBackstageData.ts` | Trae el estado de los workflows n8n para Grid View y Orbit View, sincronizado vía `backstage-sync` |
+| `useReducedMotion.ts` | Respeta `prefers-reduced-motion`; envuelve toda la app en `MotionConfig` de framer-motion |
+| `use-mobile.tsx` | Breakpoint responsive compartido |
+| `use-toast.ts` | Sistema de notificaciones (shadcn) |
+
+> La mayoría de la lógica de datos vive directo en las páginas en vez de
+> extraerse a hooks por módulo: `CRM.tsx` (54 KB), `Prospecting.tsx` (24 KB) y
+> `Calls.tsx` (26 KB) son los archivos más grandes del repo.
+
+### Código huérfano (no eliminar sin revisar antes)
+
+La ruta `/` no renderiza una landing — desde marzo 2026 `Index.tsx` es un
+simple `<Navigate to="/dashboard" />`. Como resultado, estos componentes del
+template original **no están conectados a ninguna ruta activa**:
+
+```
+src/components/
+├── Hero.tsx / HeroCanvas.tsx      # huérfano
+├── About.tsx                       # huérfano
+├── Services.tsx                    # huérfano
+├── Portfolio.tsx                   # huérfano
+├── Blog.tsx                        # huérfano
+├── Contact.tsx                     # huérfano
+├── Navigation.tsx / TopBar.tsx     # huérfano
+├── Marquee.tsx                     # huérfano
+├── Footer.tsx                      # huérfano
+└── three/HeroScene.tsx             # huérfano — escena 3D del hero sin uso
+```
+
+Y en el Backstage hay **dos implementaciones de escena 3D**; solo una está
+activa:
+
+| Componente | Estado |
+|---|---|
+| `components/backstage/BackstageScene3D.tsx` | ✅ Activa — es la que `BackstageViewer.tsx` importa y renderiza en la vista Orbit |
+| `components/three/BackstageScene.tsx` | ⚠️ Huérfana — no la importa ningún archivo de rutas ni `BackstageViewer.tsx` |
+
+### Base de datos
+
+14 migraciones SQL versionadas (marzo → abril 2026), con Supabase Auth + RLS
+por rol (`admin` / `team`) vía la función `has_role` (`SECURITY DEFINER`).
+
+### Estructura completa
+
+```
+src/
+├── components/
+│   ├── backstage/          # Grid View, WorkflowCard/Filters/DetailPanel, FlowDiagram, BackstageScene3D (Orbit — activa)
+│   ├── three/               # HeroScene, BackstageScene — ambos huérfanos, sin ruta que los use
+│   ├── motion/               # Wrappers de animación
+│   ├── ui/                   # shadcn primitives
+│   ├── ProspectingMap.tsx    # Mapa de polígonos (Google Maps)
+│   ├── AppSidebar.tsx / AppLayout.tsx / ProtectedRoute.tsx
+│   └── Hero / About / Services / Portfolio / Blog / Contact / Footer / Navigation / Marquee / TopBar / HeroCanvas  # huérfanos — ver nota arriba
+├── pages/                   # Dashboard · CRM (54KB) · Calls (26KB) · Prospecting (24KB) · EmailCampaigns · EmailMetrics · Knowledge · Backstage · Settings · Login · Index (redirect a /dashboard)
+├── hooks/                    # useBackstageData, useReducedMotion, use-mobile, use-toast
+├── lib/
+│   ├── motion.ts
+│   ├── pixel-office/         # Motor heredado, sin uso activo (Pixel Office view descontinuada)
+│   └── supabase.ts / utils.ts
+├── integrations/supabase/    # Cliente + types autogenerados
+└── contexts/                  # AuthContext
+
+supabase/
+├── functions/                 # 8 edge functions — ver tabla arriba
+└── migrations/                # 14 migraciones (mar–abr 2026)
+```
+
+---
+
 ## 🚀 Edge Functions
 
 | Función | Propósito |
@@ -107,24 +183,6 @@
 - **Llamadas válidas**: `answered === true && duration >= 60`.
 - **Secretos**: gestionados vía Lovable Cloud — nunca hardcoded.
 - **Diseño**: tokens semánticos HSL en `index.css` y `tailwind.config.ts`. **Nunca** colores directos en componentes.
-
----
-
-## 📂 Estructura
-
-```
-src/
-├── components/
-│   ├── backstage/        # Grid View · Orbit View (3D) — Pixel Office descontinuada
-│   ├── ui/               # shadcn primitives
-│   └── ...
-├── pages/                # Dashboard · CRM · Calls · Prospecting · Backstage...
-├── lib/
-│   └── pixel-office/     # Motor pixel-art heredado (sprites, layout) — sin uso activo en UI
-├── integrations/supabase # Cliente + types autogenerados
-└── contexts/             # AuthContext, etc.
-supabase/functions/       # Edge functions (Deno)
-```
 
 ---
 
