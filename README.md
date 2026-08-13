@@ -1,200 +1,112 @@
-# 🎵 Musa Hub
+*[Versión en español](README.es.md)*
 
-> **Plataforma operativa todo-en-uno para equipos comerciales modernos.**
-> CRM, prospección geográfica, telefonía, email marketing y automatizaciones — orquestados por agentes de IA.
+# MusaHub
 
-[![Status](https://img.shields.io/badge/status-production-8DC63F?style=flat-square)]()
-[![Stack](https://img.shields.io/badge/stack-React%20%2B%20Vite%20%2B%20Supabase-4ECDC4?style=flat-square)]()
-[![Automations](https://img.shields.io/badge/automations-n8n-FF6B6B?style=flat-square)]()
-[![License](https://img.shields.io/badge/license-Private-333?style=flat-square)]()
+All-in-one operating platform for sales teams: Kanban CRM, geographic polygon prospecting, Zadarma telephony, Brevo email marketing, and real-time n8n workflow visualization through Backstage.
 
----
+**Production:** https://musahub.vercel.app
 
-## 🌟 Visión
+## What it does
 
-**Musa Hub** centraliza todo el ciclo de vida comercial — desde el primer pin en el mapa hasta la llamada cerrada — en una única interfaz coherente, rápida y bonita. Está diseñado para que un equipo pequeño rinda como uno grande, apoyándose en automatizaciones (n8n), telefonía VoIP (Zadarma), email transaccional (Brevo) y agentes de IA visualizables en tiempo real desde el **Backstage**.
+- **CRM** — manage contacts and opportunities through a Kanban board.
+- **Geographic prospecting** — create and manage Google Maps polygons to organize sales territories.
+- **Telephony** — Zadarma integration for calls and activity tracking.
+- **Email marketing** — campaigns and metrics through Brevo.
+- **Backstage** — operational visualization of n8n workflows through Grid View and 3D Orbit View.
+- **Dashboard** — team activity overview and metrics.
+- **Settings** — platform and team configuration.
 
----
+## Architecture
 
-## ✨ Funcionalidades Principales
+### Data hooks
 
-### 📊 Dashboard
-- KPIs diarios: **60 llamadas**, **30 contestadas**, **20 emails**, **10 llamadas válidas**.
-- Feed de actividad en vivo y gráficas de progreso por agente.
-- Llamadas válidas del mes corriente con desglose por estado.
-
-### 🗂️ CRM Pipeline
-- Vista **Kanban** con etapas configurables y código de color.
-- Valor por defecto, asignación automática de leads y tracking de actividad.
-- Filtrado por agente, etapa y rango temporal.
-
-### 🗺️ Prospecting Tool
-- Búsqueda geográfica por **polígonos** sobre Google Maps.
-- Generación de PINs seguros y enriquecimiento de contactos vía edge function `scrape-contacts`.
-- **Categorías de prospección con multi-selección** — un mismo lead puede clasificarse en más de una categoría a la vez.
-- **Snippets con vista previa** — fragmentos de mensaje reutilizables para no reescribir la prospección desde cero.
-
-### 📞 Calls Analytics
-- Integración nativa con **Zadarma**: sincronización, estados, duración y grabaciones.
-- Criterio de validez: **contestada Y duración ≥ 60s**.
-- Reproducción de audios desde la API de Zadarma con resolución de PBX call IDs.
-
-### 📧 Email Campaigns & Metrics
-- Campañas multi-step con secuencias programadas y envío como hilo.
-- Callbacks de n8n para tracking real-time.
-- Métricas Brevo: aperturas, clicks, **Hard Bounces** y goals diarios.
-
-### 📚 Knowledge Base
-- Categorías, restricciones por autor y búsqueda **fuzzy**.
-
-### 🎭 Backstage
-- Visualización de los workflows n8n como **agentes vivos**:
-  - **Grid View** — listado clásico con detalle, filtros y panel de workflow (`WorkflowCard`, `WorkflowFilters`, `WorkflowDetailPanel`, `FlowDiagram`).
-  - **Orbit View** — sistema solar pixel-art en 3D (React Three Fiber) con planetas, satélites y skybox.
-- Sincronización periódica del estado de los workflows vía la edge function `backstage-sync`.
-
-> **Nota:** la vista **Pixel Office** (oficina isométrica) que documentaban versiones
-> anteriores de este README fue descontinuada. Solo quedan Grid View y Orbit View.
-
-### 🔐 Auth & RBAC
-- Supabase Auth con roles **admin** y **team**.
-- Roles almacenados en tabla separada (`user_roles`) + función `has_role` SECURITY DEFINER.
-
----
-
-## 🛠️ Stack Técnico
-
-| Capa | Tecnología |
-|------|------------|
-| **Frontend** | React 18 · Vite 5 · TypeScript 5 · Tailwind v3 · shadcn/ui |
-| **3D / Pixel** | three.js · React Three Fiber · Canvas 2D engine |
-| **Backend** | Lovable Cloud (Supabase) · Edge Functions (Deno) |
-| **Automatizaciones** | n8n (webhooks bidireccionales) |
-| **Telefonía** | Zadarma API |
-| **Email** | Brevo (transaccional + marketing) |
-| **Mapas** | Google Maps JavaScript API |
-| **IA** | Lovable AI Gateway (Gemini · GPT-5) |
-
----
-
-## 🎨 Identidad Visual
-
-- **Lime Green** `#8DC63F` — primario, energía y acción.
-- **Turquoise** `#4ECDC4` — secundario, claridad y datos.
-- Tipografía bold, esquinas redondeadas, jerarquía clara.
-- Pixel-art retro reservado para el Backstage (Orbit View).
-
----
-
-## 🏗️ Arquitectura
-
-### Hooks de datos
-
-| Hook | Para qué |
+| Hook | Purpose |
 |---|---|
-| `useBackstageData.ts` | Trae el estado de los workflows n8n para Grid View y Orbit View, sincronizado vía `backstage-sync` |
-| `useReducedMotion.ts` | Respeta `prefers-reduced-motion`; envuelve toda la app en `MotionConfig` de framer-motion |
-| `use-mobile.tsx` | Breakpoint responsive compartido |
-| `use-toast.ts` | Sistema de notificaciones (shadcn) |
+| `useBackstageData.ts` | Retrieves n8n workflow state for Grid View and Orbit View, synchronized through `backstage-sync`. |
+| `useReducedMotion.ts` | Respects `prefers-reduced-motion` and wraps the app in Framer Motion's `MotionConfig`. |
+| `use-mobile.tsx` | Shared responsive breakpoint. |
+| `use-toast.ts` | shadcn-based notification system. |
 
-> La mayoría de la lógica de datos vive directo en las páginas en vez de
-> extraerse a hooks por módulo: `CRM.tsx` (54 KB), `Prospecting.tsx` (24 KB) y
-> `Calls.tsx` (26 KB) son los archivos más grandes del repo.
+Most data logic lives directly in the page components rather than being extracted into module-specific hooks: `CRM.tsx` (54 KB), `Prospecting.tsx` (24 KB), and `Calls.tsx` (26 KB) are the repository's largest files.
 
-### Código huérfano (no eliminar sin revisar antes)
+### Active and legacy components
 
-La ruta `/` no renderiza una landing — desde marzo 2026 `Index.tsx` es un
-simple `<Navigate to="/dashboard" />`. Como resultado, estos componentes del
-template original **no están conectados a ninguna ruta activa**:
+The `/` route redirects to `/dashboard`; `Index.tsx` is a redirect and not an active public landing page.
 
-```
-src/components/
-├── Hero.tsx / HeroCanvas.tsx      # huérfano
-├── About.tsx                       # huérfano
-├── Services.tsx                    # huérfano
-├── Portfolio.tsx                   # huérfano
-├── Blog.tsx                        # huérfano
-├── Contact.tsx                     # huérfano
-├── Navigation.tsx / TopBar.tsx     # huérfano
-├── Marquee.tsx                     # huérfano
-├── Footer.tsx                      # huérfano
-└── three/HeroScene.tsx             # huérfano — escena 3D del hero sin uso
-```
+The following original-template components are not connected to active routes and should be considered orphaned code until reviewed:
 
-Y en el Backstage hay **dos implementaciones de escena 3D**; solo una está
-activa:
+- `Hero.tsx` / `HeroCanvas.tsx`.
+- `About.tsx`, `Services.tsx`, `Portfolio.tsx`, `Blog.tsx`, and `Contact.tsx`.
+- `Navigation.tsx`, `TopBar.tsx`, `Marquee.tsx`, and `Footer.tsx`.
+- `three/HeroScene.tsx`.
 
-| Componente | Estado |
+Backstage contains two 3D scene implementations:
+
+| Component | Status |
 |---|---|
-| `components/backstage/BackstageScene3D.tsx` | ✅ Activa — es la que `BackstageViewer.tsx` importa y renderiza en la vista Orbit |
-| `components/three/BackstageScene.tsx` | ⚠️ Huérfana — no la importa ningún archivo de rutas ni `BackstageViewer.tsx` |
+| `components/backstage/BackstageScene3D.tsx` | Active; imported and rendered by `BackstageViewer.tsx` in Orbit View. |
+| `components/three/BackstageScene.tsx` | Orphaned; no active route or `BackstageViewer.tsx` imports it. |
 
-### Base de datos
+### Database and structure
 
-14 migraciones SQL versionadas (marzo → abril 2026), con Supabase Auth + RLS
-por rol (`admin` / `team`) vía la función `has_role` (`SECURITY DEFINER`).
+The application uses Supabase Auth and role-based RLS (`admin` / `team`) through the `SECURITY DEFINER` function `has_role`. The project contains 14 versioned SQL migrations from March to April 2026 and 8 edge functions.
 
-### Estructura completa
-
-```
+```text
 src/
 ├── components/
-│   ├── backstage/          # Grid View, WorkflowCard/Filters/DetailPanel, FlowDiagram, BackstageScene3D (Orbit — activa)
-│   ├── three/               # HeroScene, BackstageScene — ambos huérfanos, sin ruta que los use
-│   ├── motion/               # Wrappers de animación
-│   ├── ui/                   # shadcn primitives
-│   ├── ProspectingMap.tsx    # Mapa de polígonos (Google Maps)
+│   ├── backstage/          # Grid View, Orbit View, cards, filters, and panels
+│   ├── three/              # Legacy scenes with no active route
+│   ├── motion/             # Animation wrappers
+│   ├── ui/                 # shadcn primitives
+│   ├── ProspectingMap.tsx  # Google Maps polygon map
 │   ├── AppSidebar.tsx / AppLayout.tsx / ProtectedRoute.tsx
-│   └── Hero / About / Services / Portfolio / Blog / Contact / Footer / Navigation / Marquee / TopBar / HeroCanvas  # huérfanos — ver nota arriba
-├── pages/                   # Dashboard · CRM (54KB) · Calls (26KB) · Prospecting (24KB) · EmailCampaigns · EmailMetrics · Knowledge · Backstage · Settings · Login · Index (redirect a /dashboard)
-├── hooks/                    # useBackstageData, useReducedMotion, use-mobile, use-toast
+│   └── legacy landing components
+├── pages/                  # Dashboard, CRM, Calls, Prospecting, EmailCampaigns,
+│                           # EmailMetrics, Knowledge, Backstage, Settings, Login
+├── hooks/                  # Backstage, reduced motion, mobile, and toast
 ├── lib/
 │   ├── motion.ts
-│   ├── pixel-office/         # Motor heredado, sin uso activo (Pixel Office view descontinuada)
+│   ├── pixel-office/       # Legacy engine with no active use
 │   └── supabase.ts / utils.ts
-├── integrations/supabase/    # Cliente + types autogenerados
-└── contexts/                  # AuthContext
+├── integrations/supabase/  # Client and autogenerated types
+└── contexts/               # AuthContext
 
 supabase/
-├── functions/                 # 8 edge functions — ver tabla arriba
-└── migrations/                # 14 migraciones (mar–abr 2026)
+├── functions/              # Edge functions
+└── migrations/              # 14 migrations
 ```
 
----
+## Technical stack
 
-## 🚀 Edge Functions
+```text
+Frontend    React + TypeScript + Vite
+UI          shadcn/ui + Tailwind CSS
+Animation   Framer Motion
+Maps        Google Maps
+Telephony   Zadarma
+Email       Brevo
+Backend/DB  Supabase (Postgres, Auth, RLS, Realtime)
+Workflows   n8n + Backstage sync
+Deploy      Vercel
+```
 
-| Función | Propósito |
-|---------|-----------|
-| `backstage-sync` | Sincroniza el estado de los workflows de n8n mostrados en el Backstage |
-| `brevo-email-stats` | KPIs y bounces de Brevo |
-| `email-campaign-callback` | Webhook entrante desde n8n |
-| `get-call-recording` | Resuelve y sirve audios Zadarma |
-| `process-scheduled-steps` | Ejecuta steps programados de campañas |
-| `scrape-contacts` | Enriquecimiento de leads del prospecting |
-| `send-email-campaign` | Disparo a n8n con variables dinámicas |
-| `sync-zadarma-calls` | Sincronización periódica de llamadas |
+## Local development
 
----
+```bash
+npm install
+npm run dev
+```
 
-## 📐 Convenciones
+## Roadmap
 
-- **Fechas sin hora**: concatenar `'T00:00:00'` antes de parsear ISO (evita timezone shifts).
-- **Llamadas válidas**: `answered === true && duration >= 60`.
-- **Secretos**: gestionados vía Lovable Cloud — nunca hardcoded.
-- **Diseño**: tokens semánticos HSL en `index.css` y `tailwind.config.ts`. **Nunca** colores directos en componentes.
+- Scheduled PDF reports from the Dashboard.
+- Improvements to workflow synchronization and monitoring.
+- Expanded sales automation and metrics.
 
----
+## Project status
 
-## 🧭 Roadmap (alto nivel)
+Pixel Office has been discontinued, and its legacy engine is retained only as a reference. Review components marked as orphaned before removing them.
 
-- [ ] Reportes PDF programados desde el Dashboard.
-- [ ] Multi-tenant con workspaces aislados.
-- [ ] Agente IA conversacional sobre el CRM.
-- [ ] Mobile-first redesign del Pipeline.
+## License
 
----
-
-## 📜 Licencia
-
-Proyecto privado — © Musa Hub. Todos los derechos reservados.
+Private — commercial operating platform.
